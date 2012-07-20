@@ -1,22 +1,50 @@
 #include "GuiConfigurator.h"
 
+GuiConfigurator* GuiConfigurator::mInstance = NULL;
+
 GuiConfigurator::GuiConfigurator(){
+    bFirstStart = true;
+    SubObMediator::Instance()->addObserver("button", this);
 }
 
-GuiConfigurator::GuiConfigurator(string _file){
+GuiConfigurator* GuiConfigurator::Instance(){
+    if(!mInstance){
+        mInstance = new GuiConfigurator();
+    }
+    return mInstance;
+}
+
+void GuiConfigurator::addFile(string _file){
     mXML.loadFile(_file);
     gCr = new GuiCreator();
 }
 
+void GuiConfigurator::update(Subject* _sub){
+    string target = _sub->getAttr("target");
+    string action = _sub->getAttr("action");
+    string name = _sub->getAttr("name");
+    cout << "got a GUI update from " << name << " for target " << target << " with action " << action << endl;
+    if(action == "open"){
+        openSheet(target);
+    }
+    if(action == "close"){
+        closeSheet(target);
+    }
+    if(action == "replace"){
+        replaceSheet(target);
+    }
+}
+
 void GuiConfigurator::getTags(){
-    cout << "loading gui data." << endl;
     mXML.pushTag("gui");
     int numSheets = mXML.getNumTags("sheet");
     cout << "have " << numSheets << " sheets." << endl;
     for(int i = 0; i < numSheets; i++){
         string sheetName = mXML.getAttribute("sheet","name","none",i);
+        string sheetType = mXML.getAttribute("sheet","type","none",i);
+        sheetTypes[sheetName] = sheetType;
         cout << "starting sheet - " << sheetName << endl;
-        mXML.pushTag("sheet");
+        mXML.pushTag("sheet", i);
         int numNodes = mXML.getNumTags("node");
         cout << "have " << numNodes << " nodes." << endl;
         for(int j = 0; j < numNodes; j++){
@@ -59,37 +87,52 @@ void GuiConfigurator::makeGUI(){
         //GuiSheet* tmpSheetPtr = new GuiSheet()
         //tmpGuiSheet->setName(tmpName);
         sheets[tmpName] = new GuiSheet();
+        sheets[tmpName]->setName(tmpName);
+        sheets[tmpName]->setType(sheetTypes[tmpName]);
         //vector<map<string,string> > tmpAttrs = (*sIter).second;
         for(gIter = (*sIter).second.begin(); gIter != (*sIter).second.end(); gIter++){
             makeNode(tmpName,(*gIter));
         }
     }
-	SceneManager::Instance()->pushSheet(sheets["main"]);
+	SceneManager::Instance()->addMask(sheets["screen"]);
+	SceneManager::Instance()->addInfoMask(sheets["info-screen"]);
+    SceneManager::Instance()->pushSheet(sheets["attract"]);
 }
 
 void GuiConfigurator::makeNode(string _handle, map<string,string> &_attrs){
     string type = _attrs["type"];
-    cout <<"GUI_CREATOR - making new " << type << endl;
-    if(type == "menu")
-        //guiNodes.push_back(new Menu(_attrs));
-        sheets[_handle]->addNode(new Menu(_attrs));
-    else if(type == "decoration")
-        //guiNodes.push_back(new Decoration(_attrs));
-        sheets[_handle]->addNode(new Decoration(_attrs));
-    else if(type == "image")
-        //guiNodes.push_back(new Image(_attrs));
-        sheets[_handle]->addNode(new Image(_attrs));
-    else if(type == "button")
-        //guiNodes.push_back(new GuiButton(_attrs));
+    if(type == "scrubber"){
+        sheets[_handle]->addNode(new GuiScrubber(_attrs));
+    } else if(type == "image"){
+        sheets[_handle]->addNode(new GuiImage(_attrs));
+    } else if(type == "video"){
+        sheets[_handle]->addNode(new GuiVideo(_attrs));
+    } else if(type == "button"){
         sheets[_handle]->addNode(new GuiButton(_attrs));
-    else if(type == "media-preview")
-        //guiNodes.push_back(new MediaPreview(_attrs));
+    } else if(type == "media-preview"){
         sheets[_handle]->addNode(new MediaPreview(_attrs));
-    else if(type == "timeline")
-        //guiNodes.push_back(new Timeline(_attrs));
-        sheets[_handle]->addNode(new Timeline(_attrs));
+    } else if(type == "timeline"){
+        sheets[_handle]->addNode(new GuiTimeline(_attrs));
+    } else if(type == "viewport"){
+        sheets[_handle]->addNode(new Viewport(_attrs));
+    } else if(type == "video-pager"){
+        sheets[_handle]->addNode(new VideoPager(_attrs));
+    } else if(type == "loosie") {
+        sheets[_handle]->setLoosie();
+    }
 }
 
+void GuiConfigurator::addSheet(string _handle, GuiSheet* _sheet){
+    sheets[_handle] = _sheet;
+}
+
+void GuiConfigurator::addLoosie(GuiNode* _loosie){
+    loosie = _loosie;
+}
+
+GuiNode* GuiConfigurator::getLoosie(){
+    return loosie;
+}
 
 void GuiConfigurator::print(){
     map<string, vector<map<string,string> > >::iterator mIter;
@@ -109,8 +152,48 @@ void GuiConfigurator::print(){
     }
 }
 
+void GuiConfigurator::deliverMessage(map<string,string> _msg){
+    map<string,GuiSheet*>::iterator sIter;
+    for(sIter = sheets.begin(); sIter != sheets.end(); ++sIter){
+        if((*sIter).second->deliverMessage(_msg)){
+            return;
+        }
+    }
+}
+
+GuiSheet* GuiConfigurator::openSheet(string _name){
+    SceneManager::Instance()->pushSheet(sheets[_name]);
+    if(bFirstStart && _name == "main"){
+        SceneManager::Instance()->pushSheet(sheets["start-overlay"]);
+        bFirstStart = false;
+    }
+    return sheets[_name];
+}
+
+void GuiConfigurator::setGlobal(string _handle, string _val){
+    globals[_handle] = _val;
+}
+
+string GuiConfigurator::getGlobal(string _handle){
+    return globals[_handle];
+}
+
+void GuiConfigurator::closeSheet(string _name){
+    SceneManager::Instance()->popSheet();
+}
+
+void GuiConfigurator::replaceSheet(string _name){
+    SceneManager::Instance()->popSheet();
+    SceneManager::Instance()->pushSheet(sheets[_name]);
+}
+
 void GuiConfigurator::draw(){
 }
 
 void GuiConfigurator::click(int _x, int _y){
+}
+
+void GuiConfigurator::reset(){
+    bFirstStart = true;
+    SceneManager::Instance()->pushSheet(sheets["attract"]);
 }

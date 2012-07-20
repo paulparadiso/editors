@@ -1,10 +1,12 @@
 #pragma once
 
 #include "ofMain.h"
-#include "GuiConfigurator.h"
 #include "GuiCreator.h"
+#include "GuiConfigurator.h"
+#include "SubObMediator.h"
+#include "Subject.h"
 
-class testApp : public ofBaseApp{
+class testApp : public ofBaseApp, public Subject {
 
 	public:
 		void setup();
@@ -24,5 +26,10 @@ class testApp : public ofBaseApp{
         GuiConfigurator *gc;
         GuiCreator *gCr;
         ofImage img;
+        float timeOfLastInteraction;
+        float timeOutCounter;
 
+        void updateMouseState(const char * _state, int _x, int _y, int _button);
+        map<string,string> attrs;
+        string getAttr(const char* _key){return attrs[_key];}
 };
