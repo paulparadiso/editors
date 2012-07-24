@@ -101,6 +101,9 @@ void PagerItem::setItemPadding(int _x, int _y){
     itemPadding.y = _y;
 }
 
+bool PagerItem::processMouse(int _x, int _y, int _state){
+}
+
 VideoPager::VideoPager(map<string, string> & _attrs) : Pager(_attrs){
     dir = _attrs["directory"];
     lister.allowExt("xml");
