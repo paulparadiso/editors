@@ -30,6 +30,8 @@ protected:
     ofVec2f pagerPadding;
 };
 
+/*
+
 class VideoItem : public PagerItem{
 
 public:
@@ -61,6 +63,7 @@ private:
     GuiButton *button;
 };
 
+*/
 
 class Pager : public GuiNode {
 
@@ -93,6 +96,7 @@ protected:
     ofTrueTypeFont texter;
 };
 
+/*
 class VideoPager : public Pager {
 public:
     VideoPager(map<string, string> & _attrs);
@@ -102,5 +106,6 @@ private:
     ofDirectory lister;
     ofxXmlSettings xml;
 };
+*/
 
 #endif // PAGER_H_INCLUDED
