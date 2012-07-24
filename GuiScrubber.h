@@ -11,6 +11,7 @@ class GuiScrubber : public GuiNode, public Subject, public Observer {
 
 public:
     GuiScrubber(map<string,string> &_attrs);
+    bool processMouse(int _x, int _y, int _state);
     bool isDragging(int _x, int _y);
     void executeDrag(int _x, int _y);
     void execute();
@@ -26,6 +27,7 @@ private:
     float lastPct;
     ofImage ball;
     ofImage stick;
+    bool bActivated;
 };
 
 #endif // GUISCRUBBER_H

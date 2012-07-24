@@ -11,11 +11,11 @@ SubObMediator* SubObMediator::Instance(){
 
 void SubObMediator::addObserver(string _subName, Observer* _obs){
     observers[_subName].push_back(_obs);
-    std::cout << "adding an observer to subject - " << _subName << std::endl;
+    //std::cout << "adding an observer to subject - " << _subName << std::endl;
 }
 
 void SubObMediator::update(string _subName, Subject* _sub){
-    cout << "updating observers of - " << _subName << endl;
+    //cout << "updating observers of - " << _subName << endl;
     vector<Observer*>::iterator oIter;
     for(oIter = observers[_subName].begin(); oIter != observers[_subName].end(); ++oIter){
         (*oIter)->update(_sub);

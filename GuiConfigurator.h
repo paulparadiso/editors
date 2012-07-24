@@ -15,6 +15,8 @@
 #include "Subject.h"
 #include "SubObMediator.h"
 
+class GuiCreator;
+
 class GuiConfigurator : public Observer{
 
 public:

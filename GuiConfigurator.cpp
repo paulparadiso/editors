@@ -69,11 +69,11 @@ void GuiConfigurator::getTags(){
 }
 
 void GuiConfigurator::addAttributeMap(string _sheet, vector<string> &_names, vector<string> &_values){
-    cout << "adding map to - " << _sheet << endl;
+    //cout << "adding map to - " << _sheet << endl;
     map<string,string> tmpAttr;
     vector<string>::iterator namesIter, valsIter;
     for(namesIter = _names.begin(), valsIter = _values.begin(); namesIter < _names.end() && valsIter < _values.end(); namesIter++, valsIter++){
-        cout << "--->adding " << (*namesIter) << ", " << (*valsIter) << " to - " << _sheet << endl;
+        //cout << "--->adding " << (*namesIter) << ", " << (*valsIter) << " to - " << _sheet << endl;
         tmpAttr[(*namesIter)] = (*valsIter);
     }
     attrs[_sheet].push_back(tmpAttr);
@@ -103,6 +103,7 @@ void GuiConfigurator::makeNode(string _handle, map<string,string> &_attrs){
     string type = _attrs["type"];
     if(type == "scrubber"){
         sheets[_handle]->addNode(new GuiScrubber(_attrs));
+        //cout << "CREATING SCRUBBER" << endl;
     } else if(type == "image"){
         sheets[_handle]->addNode(new GuiImage(_attrs));
     } else if(type == "video"){
@@ -137,16 +138,16 @@ GuiNode* GuiConfigurator::getLoosie(){
 void GuiConfigurator::print(){
     map<string, vector<map<string,string> > >::iterator mIter;
     vector<map<string, string> >::iterator vIter;
-    cout << "printing map of size - " << attrs.size() << endl;
+    //cout << "printing map of size - " << attrs.size() << endl;
     for(mIter = attrs.begin(); mIter != attrs.end(); mIter++){
-        cout << "sheet - " << (*mIter).first << endl;
+        //cout << "sheet - " << (*mIter).first << endl;
         for(vIter = (*mIter).second.begin(); vIter != (*mIter).second.end(); vIter++){
             map<string,string>::iterator mpIter;
-            cout << "NEW NODE" << endl;
+            //cout << "NEW NODE" << endl;
             for(mpIter = (*vIter).begin(); mpIter != (*vIter).end(); mpIter++){
                 string first = (*mpIter).first;
                 string second = (*mpIter).second;
-                cout << "--->" << first << "==>" << second << endl;
+                //cout << "--->" << first << "==>" << second << endl;
             }
         }
     }

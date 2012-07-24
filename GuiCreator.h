@@ -163,6 +163,7 @@ public:
     //void initialize(map<string, string> &_attrs);
     void setupVideo();
     void setupAudio();
+    bool processMouse(int _x, int _y, int _state){return false;}
     void execute();
     void update();
     void draw();
@@ -220,6 +221,7 @@ class Viewport : public GuiNode{
 
 public:
     Viewport(map<string,string> &_attrs);
+    bool processMouse(int _x, int _y, int _state){return false;}
     void execute(){}
     void update();
     void draw();

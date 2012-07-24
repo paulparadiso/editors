@@ -7,6 +7,8 @@
 #include "SubObMediator.h"
 #include "ofMain.h"
 
+class GuiNode;
+
 class GuiButton : public GuiNode, public Subject, public Observer
 {
     public:
@@ -14,6 +16,7 @@ class GuiButton : public GuiNode, public Subject, public Observer
         GuiButton(string _img);
         GuiButton(){}
         virtual ~GuiButton(){}
+        bool processMouse(int _x, int _y, int _state);
         void execute();
         virtual void update(Subject* _sub);
         void setMessage(map<string,string> _msg){}

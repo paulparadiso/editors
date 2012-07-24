@@ -47,6 +47,7 @@ void SceneManager::pushSheet(GuiSheet* _sheet){
     _sheet->activate();
     attrs["top-sheet"] = drawStack.back()->getName();
     SubObMediator::Instance()->update("sheet-changed", this);
+    cout << "top sheet = " << attrs["top-sheet"] << endl;
 }
 
 void SceneManager::popSheet(){
@@ -56,13 +57,15 @@ void SceneManager::popSheet(){
     }
     attrs["top-sheet"] = drawStack.back()->getName();
     SubObMediator::Instance()->update("sheet-changed", this);
+    cout << "top sheet = " << attrs["top-sheet"] << endl;
 }
 
 void SceneManager::update(Subject *_sub){
     string mouseState = _sub->getAttr("mouseState");
     int mouseX = ofToInt(_sub->getAttr("mouseX"));
     int mouseY = ofToInt(_sub->getAttr("mouseY"));
-    cout << "Received mouse change. State = " << mouseState << ", x = " << mouseX << ", y = " << mouseY << endl;
+    //cout << "Received mouse change. State = " << mouseState << ", x = " << mouseX << ", y = " << mouseY << endl;
+    drawStack.back()->checkNodes(mouseX,mouseY,mouseState);
  }
 
 GuiSheet* SceneManager::getTopSheet(){

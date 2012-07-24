@@ -8,7 +8,7 @@ Pager::Pager(map<string, string> &_attrs) : GuiNode(){
     pageDims.x = ofToInt(attrs["columns"]);
     pageDims.y = ofToInt(attrs["rows"]);
     numItemsPerPage = pageDims.x * pageDims.y;
-    cout << "PAGER DIMS = " << pageDims.x << ", " << pageDims.y << "NUMITEMS = " << numItemsPerPage << endl;
+    //cout << "PAGER DIMS = " << pageDims.x << ", " << pageDims.y << "NUMITEMS = " << numItemsPerPage << endl;
     //itemDims.x = size.x / pageDims.x;
     //itemDims.y = size.y / pageDims.y;
     itemDims.x = 245;
@@ -38,7 +38,15 @@ void Pager::setPositions(){
         items[i]->setPagerPadding(pos.x, pos.y);
         items[i]->setItemPadding(25,42);
     }
-    cout << "positions set" << endl;
+    //cout << "positions set" << endl;
+}
+
+bool Pager::processMouse(int _x, int _y, int _state){
+    for(vector<PagerItem*>::size_type i  = firstItem; i < lastItem; i++){
+        if(items[i]->isInside(_x,_y)){
+            items[i]->execute();
+        }
+    }
 }
 
 bool Pager::isInside(int _x, int _y){

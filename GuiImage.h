@@ -10,6 +10,7 @@ public:
     //void initialize(map<string, string> &_attrs);
     void execute();
     void draw();
+    bool processMouse(int _x, int _y, int _state){return false;}
 
 private:
     ofImage img;

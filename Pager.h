@@ -7,6 +7,8 @@
 
 ofTexture getVideoPreview(string _path, float _pos);
 
+class MediaPreview;
+
 class PagerItem : public GuiNode{
 
 public:
@@ -14,6 +16,7 @@ public:
     void setPos(ofVec2f _pos){pos = _pos;}
     void setSize(ofVec2f _size){size = _size;}
     virtual void draw(){}
+    bool processMouse(int _x, int _y, int _state);
     virtual void execute(){}
     void setPosition(int _x, int _y);
     void setDisplaySize(int _x, int _y);
@@ -64,6 +67,7 @@ class Pager : public GuiNode {
 public:
     Pager(map<string,string> &_attrs);
     //virtual ~Pager(){}
+    bool processMouse(int _x, int _y, int _state);
     virtual void execute(){}
     virtual void reload(){}
     void draw();

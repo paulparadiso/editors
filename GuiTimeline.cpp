@@ -151,7 +151,7 @@ void GuiTimeline::addItem(map<string,string> _msg){
 void GuiTimeline::deleteItem(map<string,string> _msg){
     cout << _msg["target"] << " deleting " << _msg["clip"] << endl;
     string clipToDelete = GuiConfigurator::Instance()->getGlobal("clipInQuestion");
-    list<TimelineButton*>::iterator iIter;
+    list<GuiTimelineButton*>::iterator iIter;
     for(iIter = images.begin(); iIter != images.end(); ++iIter){
         if((*iIter)->getName() == _msg["clip"]){
             cout << "deleting - " << (*iIter)->getName() << endl;
@@ -182,7 +182,7 @@ void GuiTimeline::addVideo(float _length, string _path){
     }
     //cout << "images size = " << images.size() << endl;
     */
-    images.push_back(new TimelineButton(_length));
+    images.push_back(new GuiTimelineButton(_length));
     string tmpName = _path + ofToString(clipCounter++);
     images.back()->setName(tmpName);
     images.back()->setAttr("action","open");
@@ -210,7 +210,7 @@ void GuiTimeline::addAudio(float _length, string _path){
         images.push_back(new GuiButton("cuts/timeline_audio_icon_30.png"));
     }
     */
-    images.push_back(new TimelineButton(_length));
+    images.push_back(new GuiTimelineButton(_length));
     //images.back()->setName(name + ofToString(clipCounter++));
     string tmpName = _path + ofToString(clipCounter++);
     images.back()->setName(tmpName);
@@ -225,7 +225,7 @@ void GuiTimeline::addAudio(float _length, string _path){
 }
 
 bool GuiTimeline::isInside(int _x, int _y){
-    list<TimelineButton*>::iterator iIter;
+    list<GuiTimelineButton*>::iterator iIter;
     for(iIter = images.begin(); iIter != images.end(); ++iIter){
         if((*iIter)->isInside(_x, _y)){
             GuiConfigurator::Instance()->setGlobal("active-timeline", name);
@@ -245,7 +245,7 @@ void GuiTimeline:: draw(){
     //ofRect(pos.x,pos.y,size.x, size.y);
     ofVec2f drawPos = pos;
     drawPos.y += 5;
-    list<TimelineButton*>::iterator iIter;
+    list<GuiTimelineButton*>::iterator iIter;
     for(iIter = images.begin(); iIter != images.end(); ++iIter){
         (*iIter)->setPosition(drawPos);
         drawPos.x += (*iIter)->getSize().x - 3;

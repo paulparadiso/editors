@@ -4,8 +4,9 @@
 #include "ofMain.h"
 
 enum{
-    MOUSE_CLICK,
-    MOUSE_DRAGGED
+    MOUSE_STATE_DOWN,
+    MOUSE_STATE_UP,
+    MOUSE_STATE_DRAG
 };
 
 class GuiNode{
@@ -17,6 +18,7 @@ public:
     //Test if a touchscreen selection is within the node.
     virtual bool isInside(int _x, int _y);
     virtual bool isDragging(int _x, int _y){return false;}
+    virtual bool processMouse(int _x, int _y, int _state) = 0;
     virtual void setPosition(ofVec2f _pos){pos = _pos;}
     virtual void message(map<string,string> _msg){}
     virtual void sendMessage(){}
@@ -28,7 +30,7 @@ public:
     void initialize();
     string getName(){return name;}
     string setName(string &_name){name = _name; cout << "setting name to " << name << endl;}
-    void setName(const char * _name){name = _name; cout << "setting name to " << name << endl;}
+    void setName(const char * _name){name = _name;}
     string getType(){return type;}
     ofVec2f getPos(){return pos;}
     ofVec2f getSize(){return size;}

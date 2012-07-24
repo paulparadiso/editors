@@ -29,7 +29,19 @@ GuiButton::GuiButton(string _img) : GuiNode(){
     drawActive = false;
 }
 
+bool GuiButton::processMouse(int _x, int _y, int _state){
+    cout << name << " being checked" << endl;
+    if(_state == MOUSE_STATE_DOWN){
+        if(isInside(_x,_y)){
+            execute();
+            return true;
+        }
+    }
+    return false;
+}
+
 void GuiButton::execute(){
+    cout << name << " is executing" << endl;
     SubObMediator::Instance()->update(name, this);
 }
 

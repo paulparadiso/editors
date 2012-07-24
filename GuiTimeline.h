@@ -44,6 +44,7 @@ public:
     void draw();
     void message(map<string,string> _msg);
     bool isInside(int _x, int _y);
+    bool processMouse(int _x, int _y, int _state){return false;}
     void addItem(map<string,string> _msg);
     void deleteItem(map<string,string> _msg);
     float getTimeRemaining(){return maxTime - currentTime;};
