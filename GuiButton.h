@@ -18,15 +18,18 @@ class GuiButton : public GuiNode, public Subject, public Observer
         virtual ~GuiButton(){}
         bool processMouse(int _x, int _y, int _state);
         void execute();
-        virtual void update(Subject* _sub);
+        virtual void update(string _subName, Subject* _sub);
         void setMessage(map<string,string> _msg){}
         void draw();
         string getAttr(const char* _key){return attrs[_key];}
-    protected:
+		void setChannel(string _channel){channel = _channel;}
+		string getChannel(){return channel;}
+	protected:
     private:
         ofImage inactive;
         ofImage active;
-        bool drawActive;
+		string channel;
+		bool drawActive;
         bool haveActive;
         bool haveImage;
 };

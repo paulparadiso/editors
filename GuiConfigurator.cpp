@@ -111,7 +111,7 @@ void GuiConfigurator::makeNode(string _handle, map<string,string> &_attrs){
     } else if(type == "button"){
         sheets[_handle]->addNode(new GuiButton(_attrs));
     } else if(type == "media-preview"){
-        sheets[_handle]->addNode(new MediaPreview(_attrs));
+        sheets[_handle]->addNode(new GuiMediaPreview(_attrs));
     } else if(type == "timeline"){
         sheets[_handle]->addNode(new GuiTimeline(_attrs));
     } else if(type == "viewport"){

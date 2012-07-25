@@ -12,7 +12,7 @@ class Observer
     public:
         Observer();
         virtual ~Observer();
-        virtual void update(Subject* _sub);
+        virtual void update(string _subName, Subject* _sub);
     protected:
     private:
 };

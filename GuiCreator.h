@@ -11,6 +11,7 @@
 #include "GuiImage.h"
 #include "GuiSheet.h"
 #include "GuiTimeline.h"
+#include "GuiMediaPreview.h"
 
 /*
 
@@ -156,6 +157,8 @@ private:
 };
 */
 
+/*
+
 class MediaPreview : public GuiNode{
 
 public:
@@ -186,6 +189,7 @@ private:
     GuiButton *play;
 
 };
+*/
 
 /*
 

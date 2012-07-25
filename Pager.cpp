@@ -42,11 +42,19 @@ void Pager::setPositions(){
 }
 
 bool Pager::processMouse(int _x, int _y, int _state){
-    for(vector<PagerItem*>::size_type i  = firstItem; i < lastItem; i++){
-        if(items[i]->isInside(_x,_y)){
-            items[i]->execute();
-        }
-    }
+    if(_state == MOUSE_STATE_DOWN){
+		for(vector<PagerItem*>::size_type i  = firstItem; i < lastItem; i++){
+			if(items[i]->isInside(_x,_y)){
+				items[i]->execute();
+				return true;
+			}
+		}
+		if(exit->isInside(_x, _y)){
+			exit->execute();
+			return true;
+		}
+	}
+	return false;
 }
 
 bool Pager::isInside(int _x, int _y){
@@ -102,6 +110,7 @@ void PagerItem::setItemPadding(int _x, int _y){
 }
 
 bool PagerItem::processMouse(int _x, int _y, int _state){
+	return false;
 }
 
 VideoPager::VideoPager(map<string, string> & _attrs) : Pager(_attrs){
@@ -153,7 +162,7 @@ VideoItem::VideoItem(string _path){
 
 void VideoItem::setupVideo(){
     preview.loadImage(attrs["preview"]);
-    mediaPreview = new MediaPreview(attrs);
+    mediaPreview = new GuiMediaPreview(attrs);
     mediaPreview->setPosition(ofVec2f(407,278));
     msg["action"] = "add";
     msg["target"] = "video-timeline";
@@ -178,7 +187,7 @@ void VideoItem::setupVideo(){
 
 void VideoItem::setupImage(){
     preview.loadImage(attrs["preview"]);
-    mediaPreview = new MediaPreview(attrs);
+    mediaPreview = new GuiMediaPreview(attrs);
     mediaPreview->setPosition(ofVec2f(-80,-100));
     msg["action"] = "add";
     msg["target"] = "video-timeline";
@@ -195,7 +204,7 @@ void VideoItem::setupImage(){
 }
 
 void VideoItem::setupAudio(){
-    mediaPreview = new MediaPreview(attrs);
+    mediaPreview = new GuiMediaPreview(attrs);
     mediaPreview->setPosition(ofVec2f(-80,-80));
     msg["action"] = "add";
     msg["path"] = attrs["path"];

@@ -60,7 +60,7 @@ void SceneManager::popSheet(){
     cout << "top sheet = " << attrs["top-sheet"] << endl;
 }
 
-void SceneManager::update(Subject *_sub){
+void SceneManager::update(string _subName, Subject *_sub){
     string mouseState = _sub->getAttr("mouseState");
     int mouseX = ofToInt(_sub->getAttr("mouseX"));
     int mouseY = ofToInt(_sub->getAttr("mouseY"));

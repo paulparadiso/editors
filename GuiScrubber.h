@@ -16,7 +16,7 @@ public:
     void executeDrag(int _x, int _y);
     void execute();
     void update();
-    void update(Subject *_sub);
+    void update(string _subName, Subject *_sub);
     void draw();
     string getAttrs(const char* _key){return attrs[_key];}
     float getPercent(){return pct;}

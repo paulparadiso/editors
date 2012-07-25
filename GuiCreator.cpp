@@ -406,6 +406,7 @@ void Image::draw(){
 }
 */
 
+/*
 MediaPreview::MediaPreview(map<string,string> &_attrs): GuiNode(){
     attrs = _attrs;
     //initialize();
@@ -533,6 +534,7 @@ void MediaPreview::message(map<string,string> _msg){
         preview->startPreview();
     }
 }
+*/
 
 /*
 TimelineGui::TimelineGui(map<string,string> &_attrs): GuiNode(){

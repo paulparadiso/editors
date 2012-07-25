@@ -9,7 +9,7 @@
 class SceneManager : public Subject, public Observer {
 
 public:
-    static SceneManager* Instance();
+    static SceneManager* Instance(); 
     void pushSheet(GuiSheet* _sheet);
     void popSheet();
     void addMask(GuiSheet* _mask);
@@ -17,7 +17,7 @@ public:
 	void addInteractiveNode(GuiNode* _node);
     void touchSheet(string _target);
     void update();
-    void update(Subject *_sub);
+    void update(string _subName, Subject *_sub);
     void draw();
     GuiSheet* getTopSheet();
     void reset();

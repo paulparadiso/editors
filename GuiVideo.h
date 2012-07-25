@@ -10,7 +10,7 @@ class GuiVideo : public GuiButton {
         virtual ~GuiVideo(){}
         void draw();
         void update();
-        void update(Subject* _sub);
+        void update(string _subName, Subject* _sub);
     private:
         ofVideoPlayer vid;
 };

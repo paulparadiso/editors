@@ -18,7 +18,7 @@ public:
     void reset();
 
 private:
-    MediaCabinet(){}
+    MediaCabinet();
     static MediaCabinet* mInstance;
     map<string, Clip*> cabinet;
     map<string, int> clipHolds;

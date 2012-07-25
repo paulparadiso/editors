@@ -3,6 +3,9 @@
 
 MediaCabinet* MediaCabinet::mInstance = NULL;
 
+MediaCabinet::MediaCabinet(){
+}
+
 MediaCabinet* MediaCabinet::Instance(){
     if(!mInstance){
         mInstance = new MediaCabinet();

@@ -90,7 +90,8 @@ bool GuiSheet::checkNodes(int _x, int _y, string _state){
         */
         cout << "checking node - " << (*gIter)->getName() << endl;;
         if((*gIter)->processMouse(_x, _y, state)){
-            return true;
+            cout << "done checking node." << endl;
+			return true;
         }
     }
     return false;

@@ -14,7 +14,7 @@ void GuiVideo::update(){
     }
 }
 
-void GuiVideo::update(Subject* _sub){
+void GuiVideo::update(string _subName, Subject* _sub){
     string topSheet = _sub->getAttr("top-sheet");
     //cout << "video got sheet change.  New sheet = " << topSheet << endl;
     if(topSheet == parent){

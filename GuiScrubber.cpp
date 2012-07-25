@@ -73,7 +73,7 @@ void GuiScrubber::update(){
     //pos.x = homeX + (maxX - homeX) * pct;
 }
 
-void GuiScrubber::update(Subject *_sub){
+void GuiScrubber::update(string _subName, Subject *_sub){
     string sPct = _sub->getAttr("time-pos");
     pct = lastPct = ofToFloat(sPct);
 }

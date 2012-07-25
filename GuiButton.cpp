@@ -19,6 +19,7 @@ GuiButton::GuiButton(map<string, string> &_attrs) : GuiNode(){
     drawActive = false;
     initialize();
     setName("button");
+	setChannel("button");
 }
 
 GuiButton::GuiButton(string _img) : GuiNode(){
@@ -30,9 +31,10 @@ GuiButton::GuiButton(string _img) : GuiNode(){
 }
 
 bool GuiButton::processMouse(int _x, int _y, int _state){
-    cout << name << " being checked" << endl;
+    //cout << name << " being checked" << endl;
     if(_state == MOUSE_STATE_DOWN){
         if(isInside(_x,_y)){
+			cout << "button clicked." << endl;
             execute();
             return true;
         }
@@ -41,11 +43,11 @@ bool GuiButton::processMouse(int _x, int _y, int _state){
 }
 
 void GuiButton::execute(){
-    cout << name << " is executing" << endl;
-    SubObMediator::Instance()->update(name, this);
+    //cout << name << " is executing" << endl;
+    SubObMediator::Instance()->update(channel, this);
 }
 
-void GuiButton::update(Subject* _sub){
+void GuiButton::update(string _subName, Subject* _sub){
 }
 
 void GuiButton::draw(){

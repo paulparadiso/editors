@@ -4,12 +4,11 @@
 #include "ofMain.h"
 #include "GuiCreator.h"
 #include "ofxXmlSettings.h"
+#include "GuiMediaPreview.h"
 
 ofTexture getVideoPreview(string _path, float _pos);
 
-class MediaPreview;
-
-class PagerItem : public GuiNode{
+class PagerItem : public GuiNode, public Subject{
 
 public:
     PagerItem() : GuiNode(){}
@@ -29,8 +28,6 @@ protected:
     ofVec2f itemPadding;
     ofVec2f pagerPadding;
 };
-
-/*
 
 class VideoItem : public PagerItem{
 
@@ -56,14 +53,12 @@ private:
     //string path;
     //string type;
     //string target;
-    MediaPreview *mediaPreview;
+    GuiMediaPreview *mediaPreview;
     GuiSheet *previewSheet;
     ofTrueTypeFont texter;
     map<string,string> msg;
     GuiButton *button;
 };
-
-*/
 
 class Pager : public GuiNode {
 
@@ -96,7 +91,6 @@ protected:
     ofTrueTypeFont texter;
 };
 
-/*
 class VideoPager : public Pager {
 public:
     VideoPager(map<string, string> & _attrs);
@@ -106,6 +100,5 @@ private:
     ofDirectory lister;
     ofxXmlSettings xml;
 };
-*/
 
 #endif // PAGER_H_INCLUDED
