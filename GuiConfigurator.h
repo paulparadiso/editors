@@ -3,13 +3,14 @@
 
 #include "ofMain.h"
 #include "ofxXmlSettings.h"
-#include "GuiCreator.h"
 #include "Pager.h"
 #include "GuiButton.h"
 #include "GuiImage.h"
 #include "GuiVideo.h"
 #include "GuiScrubber.h"
 #include "GuiSheet.h"
+#include "GuiMediaPreview.h"
+#include "GuiViewport.h"
 #include "SceneManager.h"
 #include "Observer.h"
 #include "Subject.h"
@@ -41,7 +42,7 @@ public:
     Subject/Observer interface
     */
 
-    void update(Subject* _sub);
+    void update(string _subName, Subject* _sub);
 
     /*
     Do this next.
@@ -63,7 +64,6 @@ private:
     map<string,GuiSheet*> sheets;
     map<string, string> globals;
     map<string,string>sheetTypes;
-    GuiCreator* gCr;
     GuiNode* loosie;
     bool bFirstStart;
 };

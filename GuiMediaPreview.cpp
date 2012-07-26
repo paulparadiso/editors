@@ -29,6 +29,7 @@ void GuiMediaPreview::setupVideo(){
     exit = new GuiButton("cuts/preview_exit.png");
     select = new GuiButton("cuts/preview_add.png");
     exit->setAttr("action", "close");
+    exit->setChannel("button");
     select->setAttr("action", "message");
     select->setAttr("levels", "2");
     select->setChannel("clip-selected");
@@ -80,7 +81,7 @@ void GuiMediaPreview::update(){
         preview->startPreview();
     } else {
         preview->update();
-		
+
     }
 }
 
@@ -138,18 +139,18 @@ bool GuiMediaPreview::processMouse(int _x, int _y, int _state){
 			preview = NULL;
 			return true;
 		}
-	}
-	if(select->isInside(_x,_y)){
-        select->execute();
-        preview->stopPreview();
-        preview = NULL;
-        return true;
-    }
-	if(play){
-        if(play->isInside(_x,_y)){
-            preview->startPreview();
+        if(select->isInside(_x,_y)){
+            select->execute();
+            preview->stopPreview();
+            preview = NULL;
+            return true;
         }
-    }
+        if(play){
+            if(play->isInside(_x,_y)){
+                preview->startPreview();
+            }
+        }
+	}
     return false;
 }
 

@@ -221,6 +221,8 @@ private:
 
 */
 
+/*
+
 class Viewport : public GuiNode{
 
 public:
@@ -231,6 +233,8 @@ public:
     void draw();
     void message(map<string,string> _msg);
 };
+
+*/
 
 /*
 class Scrubber : public GuiNode{

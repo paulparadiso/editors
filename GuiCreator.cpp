@@ -648,6 +648,8 @@ void TimelineGui:: draw(){
     }
 }
 */
+
+/*
 Viewport::Viewport(map<string,string> &_attrs) : GuiNode(){
     attrs = _attrs;
     initialize();
@@ -675,6 +677,7 @@ void Viewport::message(map<string,string> _msg){
     }
 
 }
+*/
 
 /*
 

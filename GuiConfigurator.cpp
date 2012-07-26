@@ -16,10 +16,9 @@ GuiConfigurator* GuiConfigurator::Instance(){
 
 void GuiConfigurator::addFile(string _file){
     mXML.loadFile(_file);
-    gCr = new GuiCreator();
 }
 
-void GuiConfigurator::update(Subject* _sub){
+void GuiConfigurator::update(string _subName, Subject* _sub){
     string target = _sub->getAttr("target");
     string action = _sub->getAttr("action");
     string name = _sub->getAttr("name");
@@ -115,7 +114,7 @@ void GuiConfigurator::makeNode(string _handle, map<string,string> &_attrs){
     } else if(type == "timeline"){
         sheets[_handle]->addNode(new GuiTimeline(_attrs));
     } else if(type == "viewport"){
-        sheets[_handle]->addNode(new Viewport(_attrs));
+        sheets[_handle]->addNode(new GuiViewport(_attrs));
     } else if(type == "video-pager"){
         sheets[_handle]->addNode(new VideoPager(_attrs));
     } else if(type == "loosie") {

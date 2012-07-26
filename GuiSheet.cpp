@@ -47,7 +47,7 @@ void GuiSheet::popFromStack(){
 */
 
 bool GuiSheet::checkNodes(int _x, int _y, string _state){
-    cout << name << " checking nodes.  Nodes size = " << nodes.size() << endl;
+    cout << name << " checking nodes.  Nodes size = " << nodes.size() << ".  State = " << _state << endl;
     vector<GuiNode*>::iterator gIter;
     int state;
     if(_state == "down"){

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ofMain.h"
-#include "GuiCreator.h"
 #include "GuiConfigurator.h"
 #include "SubObMediator.h"
 #include "Subject.h"
@@ -24,7 +23,6 @@ class testApp : public ofBaseApp, public Subject {
 		void gotMessage(ofMessage msg);
 
         GuiConfigurator *gc;
-        GuiCreator *gCr;
         ofImage img;
         float timeOfLastInteraction;
         float timeOutCounter;
