@@ -93,7 +93,7 @@ class Clip{
 
 public:
     Clip();
-    virtual ~Clip(){}
+    virtual ~Clip(){cout << "deleting clip." << endl;}
     virtual void draw(int _x, int _y, int _sx, int _sy) = 0;
     virtual void drawPreview(int _x, int _y, int _sx, int _sy) = 0;
     virtual void update(float _time) = 0;
@@ -119,6 +119,12 @@ public:
     virtual void setTransitionFrame(unsigned char *_frame){}
     virtual void releaseTransitionFrame(){}
     virtual unsigned char* getLastFrame(){}
+
+    /*New Frame Controls*/
+    virtual int getCurrentFrame(){return -1;}
+    virtual int getTotalNumFrames(){return -1;}
+    virtual unsigned char* getPixels(){return NULL;}
+    virtual void setFrame(int _frameNum){}
 
     /*Transitions*/
 
@@ -190,6 +196,12 @@ public:
     void setTransitionFrame(unsigned char* _frame);
     void releaseTransitionFrame();
     unsigned char * getLastFrame(){return lastFrame;}
+
+    /*New Frame Controls*/
+    int getCurrentFrame();
+    int getTotalNumFrames();
+    unsigned char* getPixels();
+    void setFrame(int _frameNum);
 
 private:
     ofVideoPlayer video;

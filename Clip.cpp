@@ -45,11 +45,11 @@ VideoClip::VideoClip(string _file) : Clip(){
     effects.push_back(new Wipe(duration, 0.5 / duration, 0.0,0.0));
     effects.push_back(new FadeToBlack(duration,0.5 / duration, 0.0,1.0));
     effects.push_back(new FadeToBlack(duration,0.5 / duration, 0.0,0.0));
-    lastFrame = new unsigned char[vw * vh * 3];
-    video.play();
-    video.setPosition(0.99);
-    video.update();
-    memcpy(lastFrame, video.getPixels(), vw * vh * 3);
+    //lastFrame = new unsigned char[vw * vh * 3];
+    //video.play();
+    //video.setPosition(0.99);
+    //video.update();
+    //memcpy(lastFrame, video.getPixels(), vw * vh * 3);
     video.stop();
     setupTransitions();
     black = new unsigned char[853 * 480 * 3];
@@ -57,6 +57,27 @@ VideoClip::VideoClip(string _file) : Clip(){
 }
 
 VideoClip::~VideoClip(){
+    cout << "video clip dying." << endl;
+}
+
+/*New Frame Controls*/
+
+int VideoClip::getCurrentFrame(){
+    return video.getCurrentFrame();
+}
+
+int VideoClip::getTotalNumFrames(){
+    return video.getTotalNumFrames();
+}
+
+unsigned char* VideoClip::getPixels(){
+    return video.getPixels();
+}
+
+void VideoClip::setFrame(int _frameNum){
+    cout << "video setting frame to - " << _frameNum << endl;
+    video.setFrame(_frameNum);
+    cout << "video currently at frame - " << video.getCurrentFrame() << endl;
 }
 
 void VideoClip::setTransitionFrame(unsigned char * _frame){
@@ -134,7 +155,9 @@ unsigned char* VideoClip::getNextFrame(){
 }
 
 void VideoClip::update(){
+    //cout << "video updating." << endl;
     video.update();
+    /*
     if(video.isFrameNew()){
         clipData = video.getPixels();
         if(effectStatus > 0){
@@ -155,6 +178,7 @@ void VideoClip::update(){
         //Compositor::Instance()->getMasterTex()->loadData(clipData,vw,vh,GL_RGB);
         memcpy(Compositor::Instance()->getMasterBuffer(),clipData, vw * vh * 3);
     }
+    */
 }
 
 void VideoClip::update(float _time){

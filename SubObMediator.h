@@ -16,6 +16,7 @@ class SubObMediator
         static SubObMediator* Instance();
         void update(string _subName, Subject* _sub);
         void addObserver(string _subName, Observer* _obs);
+        void removeObserver(Observer* _obs);
     protected:
     private:
         SubObMediator(){}

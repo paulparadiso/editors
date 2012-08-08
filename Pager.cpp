@@ -19,6 +19,7 @@ Pager::Pager(map<string, string> &_attrs) : GuiNode(){
     exit->setPosition(ofVec2f(pos.x + 1320,pos.y - 200));
     exit->setAttr("action", "close");
     exit->setName("button");
+    exit->setChannel("button");
     texter.loadFont("fonts/GOTHICB.TTF", 16);
 }
 
@@ -29,7 +30,18 @@ void Pager::setPositions(){
         lastItem = items.size();
     }
     cout << "Pager items = " << firstItem << ", " << lastItem << endl;
+    /*
     for(vector<PagerItem*>::size_type i  = firstItem; i < lastItem; i++){
+        int x = i % (int)pageDims.x;
+        int y = (i % numItemsPerPage) / (int)pageDims.x;
+        //cout << "setting position of " << i << " to " << x << ", " << y << endl;
+        items[i]->setPosition(x,y);
+        items[i]->setDisplaySize(itemDims.x, itemDims.y);
+        items[i]->setPagerPadding(pos.x, pos.y);
+        items[i]->setItemPadding(25,42);
+    }
+    */
+    for(int i = 0; i < items.size(); i++){
         int x = i % (int)pageDims.x;
         int y = (i % numItemsPerPage) / (int)pageDims.x;
         //cout << "setting position of " << i << " to " << x << ", " << y << endl;
@@ -43,8 +55,16 @@ void Pager::setPositions(){
 
 bool Pager::processMouse(int _x, int _y, int _state){
     if(_state == MOUSE_STATE_DOWN){
+		/*
 		for(vector<PagerItem*>::size_type i  = firstItem; i < lastItem; i++){
 			if(items[i]->isInside(_x,_y)){
+				items[i]->execute();
+				return true;
+			}
+		}
+		*/
+		for(int i = 0; i < items.size(); i++){
+            if(items[i]->isInside(_x,_y)){
 				items[i]->execute();
 				return true;
 			}
@@ -58,7 +78,14 @@ bool Pager::processMouse(int _x, int _y, int _state){
 }
 
 bool Pager::isInside(int _x, int _y){
+    /*
     for(vector<PagerItem*>::size_type i  = firstItem; i < lastItem; i++){
+        if(items[i]->isInside(_x,_y)){
+            items[i]->execute();
+        }
+    }
+    */
+    for(int i = 0; i < items.size(); i++){
         if(items[i]->isInside(_x,_y)){
             items[i]->execute();
         }
@@ -75,11 +102,17 @@ void Pager::setAllAttr(string _attr, string _val){
 }
 
 void Pager::draw(){
+    /*
     for(vector<PagerItem*>::size_type i  = firstItem; i < lastItem; i++){
         items[i]->draw();
     }
+    */
+    for(int i = 0; i < items.size(); i++){
+        items[i]->draw();
+    }
+    SceneManager::Instance()->drawTimeRemaining(activeTimeline);
     //exit->draw();
-    texter.drawString("time remaining on track :60", pos.x + 15, pos.y - 80);
+    //texter.drawString("time remaining on track :60", pos.x + 15, pos.y - 80);
 }
 
 void Pager::message(map<string,string> _msg){
@@ -113,8 +146,20 @@ bool PagerItem::processMouse(int _x, int _y, int _state){
 	return false;
 }
 
+void PagerItem::update(string _subName, Subject *_sub){
+    if(_subName == "time-remaining"){
+        string target = _sub->getAttr("name");
+        //cout << "PagerItem " << attrs["target"] << " got updated time remaining for " << target << endl;
+        if(target == attrs["target"]){
+            timeRemainingOnTrack = ofToInt(_sub->getAttr("time"));
+        }
+    }
+}
+
 VideoPager::VideoPager(map<string, string> & _attrs) : Pager(_attrs){
     dir = _attrs["directory"];
+    activeTimeline = _attrs["target"];
+    cout << "set activeTimeline to " << _attrs["target"] << endl;
     lister.allowExt("xml");
     lister.listDir(dir);
     string folder = dir + "/";
@@ -122,7 +167,20 @@ VideoPager::VideoPager(map<string, string> & _attrs) : Pager(_attrs){
         //xml.loadFile(lister.getPath(i));
         //string type = xml.getValue("type","none");
         //items.push_back(new VideoItem(xml.getValue("preview","none"), type));
-        items.push_back(new VideoItem(lister.getPath(i)));
+
+        //items.push_back(new VideoItem(lister.getPath(i)));
+        //items.back()->setAttr("target", activeTimeline);
+
+        PagerItem *tmpItemPtr = new VideoItem(lister.getPath(i));
+        tmpItemPtr->setAttr("target", activeTimeline);
+        if(tmpItemPtr->getItemType() == "audio"){
+            int index = ofToInt(tmpItemPtr->getItemIndex());
+            //items[index] = tmpItemPtr;
+            items[index] = tmpItemPtr;
+        } else {
+            //items.push_back(tmpItemPtr);
+            items[i] = tmpItemPtr;
+        }
     }
     setPositions();
 }
@@ -137,7 +195,7 @@ void VideoPager::reload(){
         //xml.loadFile(lister.getPath(i));
         //string type = xml.getValue("type","none");
         //items.push_back(new VideoItem(xml.getValue("preview","none"), type));
-        items.push_back(new VideoItem(lister.getPath(i)));
+        items[i] = new VideoItem(lister.getPath(i));
     }
     setPositions();
 }
@@ -148,6 +206,7 @@ VideoItem::VideoItem(string _path){
     setAttr("path",_path);
     setAttr("name",name);
     setAttr("type",loader.getValue("type"));
+    itemType = attrs["type"];
     duration = loader.getValue("duration");
     setAttr("preview", loader.getValue("preview"));
     //cout << "making a new item. " << name << ", " << type << ", " << path << endl;
@@ -155,9 +214,16 @@ VideoItem::VideoItem(string _path){
         setupVideo();
     else if(attrs["type"] == "image")
         setupImage();
-    else if(attrs["type"] == "audio")
+    else if(attrs["type"] == "audio"){
+        //setAttr("index",loader.getValue("position"));
+        cout << "setting itemType to audio" << endl;
+        itemType = "audio";
+        itemIndex = loader.getValue("position");
         setupAudio();
+    }
     texter.loadFont("fonts/GOTHICB.TTF",16);
+    SubObMediator::Instance()->addObserver("time-remaining", this);
+    timeRemainingOnTrack = 60;
 }
 
 void VideoItem::setupVideo(){
@@ -170,7 +236,7 @@ void VideoItem::setupVideo(){
     msg["type"] = attrs["type"];
     msg["name"] = name;
     msg["duration"] = duration;
-    int dur = ofToInt(duration);
+    durationInt = ofToInt(duration);
     if(dur < 10){
         drawDuration = "0" + ofToString(dur);
     } else {
@@ -209,8 +275,10 @@ void VideoItem::setupAudio(){
     msg["action"] = "add";
     msg["path"] = attrs["path"];
     msg["type"] = attrs["type"];
+
     msg["duration"] = duration;
     int dur = ofToInt(duration);
+    durationInt = ofToInt(duration);
     if(dur < 10){
         drawDuration = "0" + ofToString(dur);
     } else {
@@ -236,8 +304,10 @@ void VideoItem::execute(){
 }
 
 void VideoItem::executeVideo(){
-    MediaCabinet::Instance()->addClip(attrs["path"],attrs["path"]);
-    GuiConfigurator::Instance()->openSheet(attrs["path"]);
+    if(durationInt < timeRemainingOnTrack){
+        MediaCabinet::Instance()->addClip(attrs["path"],attrs["path"]);
+        GuiConfigurator::Instance()->openSheet(attrs["path"]);
+    }
 }
 
 void VideoItem::executeImage(){
@@ -271,7 +341,8 @@ void VideoItem::drawVideo(){
     pos = (basePos * ofVec2f(frame.getWidth(),frame.getHeight())) + pagerPadding + (itemPadding * basePos);
     preview.draw(pos.x + 5, pos.y + 5, displaySize.x, displaySize.y);
     frame.draw(pos.x, pos.y);
-    texter.drawString(":" + drawDuration, pos.x + 193, pos.y + 125);
+    //texter.drawString(":" + drawDuration, pos.x + 193, pos.y + 125);
+    SceneManager::Instance()->drawNumber(durationInt, pos.x + 193, pos.y + 105, 41, 25,0);
 }
 
 void VideoItem::drawImage(){

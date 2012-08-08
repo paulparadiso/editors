@@ -57,7 +57,6 @@ protected:
     string type;
     string parent;
     int dur;
-
 };
 
 ofVec2f stringToVec2f(string _in);

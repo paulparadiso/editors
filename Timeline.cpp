@@ -3,15 +3,31 @@
 #include "Compositor.h"
 #include "sndfile.h"
 
-Timeline::Timeline(float _totalTime){
+void ClipContainer::setStartFrame(int _startFrame){
+    startFrame = _startFrame;
+    stopFrame = startFrame + clip->getTotalNumFrames();
+}
+
+Timeline::Timeline(float _totalTime, string _name){
     totalTime = _totalTime; //Most likely 60.0
     timeRemaining = totalTime;
     runningTime = 0.0;
     isPlaying = false;
     clipIndex = 0;
+    numFrames = 0;
     currentClip = NULL;
     isTransitioning = false;
     setScrubTime(0.0);
+    SubObMediator::Instance()->addObserver("timeline-clip-removed", this);
+    frameBuffer = new unsigned char[853 * 480 * 3];
+    memset(frameBuffer, 0, 853 * 480 *3);
+    bHaveNewFrame = true;
+    attrs["name"] = _name;
+}
+
+unsigned char * Timeline::getPixels(){
+    bHaveNewFrame = false;
+    return frameBuffer;
 }
 
 void Timeline::addClip(Clip *_clip){
@@ -28,7 +44,9 @@ void Timeline::addClip(Clip *_clip){
     }
     */
     clips.push_back(new ClipContainer(_clip));
-    MediaCabinet::Instance()->increaseClipHold(_clip);
+    //MediaCabinet::Instance()->increaseClipHold(_clip);
+    clips.back()->setStartFrame(numFrames);
+    numFrames += clips.back()->getTotalNumFrames();
     //clips.back()->setStartTime(lastStopTime);
     /*  Commented out to test initialization on start.
     if(!currentClip){
@@ -39,6 +57,7 @@ void Timeline::addClip(Clip *_clip){
 }
 
 void Timeline::addClip(Clip* _clip, string _id){
+    /*
     if(clips.size() > 0){
         unsigned char * holder = clips.back()->getLastFrame();
         addClip(_clip);
@@ -51,6 +70,15 @@ void Timeline::addClip(Clip* _clip, string _id){
         clips.back()->setID(_id);
     }
     //timeRemaining -= clips.back()->getDuration;
+    */
+    clips.push_back(new ClipContainer(_clip));
+    clips.back()->setStartFrame(numFrames);
+    clips.back()->setID(_id);
+    numFrames += clips.back()->getTotalNumFrames();
+    //cout << "Timeline numFrames = " << numFrames << endl;
+    int timeRemaining = (int)(60 - (numFrames / 24));
+    attrs["time"] = ofToString(timeRemaining);
+    SubObMediator::Instance()->update("time-remaining",this);
 }
 
 void Timeline::removeClip(Clip *_clip){
@@ -73,8 +101,56 @@ void Timeline::removeClip(Clip *_clip){
     }
 }
 
+void Timeline::update(string _subName, Subject* _sub){
+    if(_subName == "timeline-clip-removed"){
+        //string clipID = _sub->getAttr("clip-to-remove");
+        cout << "need to remove " << _sub->getAttr("clip-to-remove") << endl;
+        removeClip(_sub->getAttr("clip-to-remove"));
+    }
+}
+
+void Timeline::setFrame(int _frame){
+    //cout << "timeline setting frame to - " << _frame << endl;
+    bool bNewFrame = false;
+    vector<ClipContainer*>::iterator cIter;
+    vector<ClipContainer*> activeClips;
+    for(cIter = clips.begin(); cIter != clips.end(); ++cIter){
+        int clipStartFrame = (*cIter)->getStartFrame();
+        int clipStopFrame = (*cIter)->getStopFrame();
+        //cout << "startFrame = " << clipStartFrame << ", clipStopFrame = " << clipStopFrame << endl;
+        if((clipStartFrame < _frame) && (_frame < clipStopFrame)){
+            int frameToSet = _frame - clipStartFrame;
+            //cout << "advancing frame to - " << frameToSet << endl;
+            (*cIter)->setFrame(frameToSet);
+            (*cIter)->update();
+            activeClips.push_back((*cIter));
+            bNewFrame = true;
+        }
+    }
+    if(bNewFrame){
+        cout << "copying new frame." << endl;
+        memcpy(frameBuffer, (*activeClips.begin())->getPixels(), 853 * 480 * 3);
+        for(cIter = activeClips.begin() + 1; cIter != activeClips.end(); ++cIter){
+            compositeFrames(frameBuffer, (*cIter)->getPixels(), 853, 480, 3);
+        }
+        bHaveNewFrame = true;
+    }
+}
+
+void Timeline::compositeFrames(unsigned char* _one, unsigned char* _two, int _w, int _h, int _bd){
+    for(int y = 0; y < _h; y++){
+        for(int x = 0; x < _w * _bd; x++){
+            int index = y * (_w * _bd) + x;
+            _one[index] = (_one[index] + _two[index]) / 2;
+            _one[index + 1] = (_one[index + 1] + _two[index + 1]) / 2;
+            _one[index + 2] = (_one[index + 2] + _two[index + 2]) / 2;
+        }
+    }
+}
+
 void Timeline::removeClip(string _id){
-    cout << "timeline asked to remove clip" << endl;
+    cout << "timeline asked to remove clip - " << _id << endl;
+    cout << "currently have " << clips.size() << " items" << endl;
     if(currentClip != NULL){
         if(currentClip->getID() == _id){
             currentClip = NULL;
@@ -85,10 +161,15 @@ void Timeline::removeClip(string _id){
     vector<ClipContainer*>::iterator cIter;
     for(cIter = clips.begin(); cIter != clips.end(); ++cIter){
         string tmpID = (*cIter)->getID();
+        cout << "checking id against " << tmpID << endl;
         if(tmpID == _id){
             (*cIter)->stop();
             cout << "timeline removing clip" << endl;
             //MediaCabinet::Instance()->removeClip((*cIter));
+            numFrames -= (*cIter)->getTotalNumFrames();
+            int timeRemaining = (int)(60 - (numFrames / 24));
+            attrs["time"] = ofToString(timeRemaining);
+            SubObMediator::Instance()->update("time-remaining",this);
             clips.erase(cIter);
             if((*cIter)->getType() == "video" && clips.size() < 1){
                 cout << "clips empty.  blacking out video" << endl;

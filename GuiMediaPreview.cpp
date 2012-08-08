@@ -44,11 +44,13 @@ void GuiMediaPreview::setupAudio(){
     frame.loadImage("cuts/audio_preview.png");
     ball.loadImage("cuts/ball_clipped.png");
     exit = new GuiButton("cuts/preview_exit.png");
+    exit->setAttr("action", "close");
+    exit->setChannel("button");
     select = new GuiButton("cuts/preview_add.png");
     play = new GuiButton("cuts/preview_add.png");
-    exit->setAttr("action", "close");
     select->setAttr("action", "message");
     select->setAttr("levels", "2");
+    select->setChannel("clip-selected");
     selectOffset.x = 230;
     selectOffset.y = 505;
     exitOffset.x = 1525;
@@ -79,6 +81,8 @@ void GuiMediaPreview::update(){
         cout << "getting clip." << endl;
         MediaCabinet::Instance()->increaseClipHold(preview);
         preview->startPreview();
+        //cout << "setting select path to " << preview->getName() << endl;
+        select->setAttr("path", preview->getName());
     } else {
         preview->update();
 
@@ -141,6 +145,7 @@ bool GuiMediaPreview::processMouse(int _x, int _y, int _state){
 		}
         if(select->isInside(_x,_y)){
             select->execute();
+            select->setChannel("button");
             preview->stopPreview();
             preview = NULL;
             return true;

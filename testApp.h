@@ -4,6 +4,7 @@
 #include "GuiConfigurator.h"
 #include "SubObMediator.h"
 #include "Subject.h"
+#include "SoundEffectsPlayer.h"
 
 class testApp : public ofBaseApp, public Subject {
 
@@ -30,4 +31,5 @@ class testApp : public ofBaseApp, public Subject {
         void updateMouseState(const char * _state, int _x, int _y, int _button);
         map<string,string> attrs;
         string getAttr(const char* _key){return attrs[_key];}
+        SoundEffectsPlayer *sfxPlayer;
 };

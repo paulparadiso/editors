@@ -5,6 +5,7 @@ GuiConfigurator* GuiConfigurator::mInstance = NULL;
 GuiConfigurator::GuiConfigurator(){
     bFirstStart = true;
     SubObMediator::Instance()->addObserver("button", this);
+    SubObMediator::Instance()->addObserver("clip-selected", this);
 }
 
 GuiConfigurator* GuiConfigurator::Instance(){
@@ -19,18 +20,27 @@ void GuiConfigurator::addFile(string _file){
 }
 
 void GuiConfigurator::update(string _subName, Subject* _sub){
-    string target = _sub->getAttr("target");
-    string action = _sub->getAttr("action");
-    string name = _sub->getAttr("name");
-    cout << "got a GUI update from " << name << " for target " << target << " with action " << action << endl;
-    if(action == "open"){
-        openSheet(target);
+    if(_subName == "button"){
+        string target = _sub->getAttr("target");
+        string action = _sub->getAttr("action");
+        string name = _sub->getAttr("name");
+        cout << "got a GUI update from " << name << " for target " << target << " with action " << action << endl;
+        if(action == "open"){
+            openSheet(target);
+        }
+        if(action == "close"){
+            closeSheet(target);
+        }
+        if(action == "replace"){
+            replaceSheet(target);
+        }
+        if(action == "add"){
+            closeSheet(target);
+        }
     }
-    if(action == "close"){
-        closeSheet(target);
-    }
-    if(action == "replace"){
-        replaceSheet(target);
+    if(_subName == "clip-selected"){
+        closeSheet("none");
+        closeSheet("none");
     }
 }
 

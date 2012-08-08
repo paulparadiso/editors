@@ -23,20 +23,21 @@ void MediaCabinet::addClip(string _name, string _path){
     if(type == "video"){
         cout << "Media Cabinet adding video - " << path << endl;
         //delete cabinet[name];
-        cabinet[name] = new VideoClip(path);
+        cabinet[path] = new VideoClip(path);
     } else if(type == "audio"){
         cout << "Media cabinet adding audio - " << path << endl;
         //delete cabinet[name];
-        cabinet[name] = new AudioClip(path, ofToFloat(duration));
+        cabinet[path] = new AudioClip(path, ofToFloat(duration));
     }
-    clipHolds[name] = 0;
+    clipHolds[path] = 0;
     cout << "MediaCabinet size = " << cabinet.size() << endl;
-    lastItem = name;
+    lastItem = path;
 }
 
 Clip* MediaCabinet::getClip(string _name){
     Clip* clip = cabinet[_name];
-    cout << "MediaCabinet return clip of length - " << clip->getDuration() << endl;
+    cout << "returning a clip named - " << clip->getName() << endl;
+        //cout << "MediaCabinet return clip of length - " << clip->getDuration() << endl;
     return clip;
 }
 

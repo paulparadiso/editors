@@ -31,11 +31,11 @@ GuiButton::GuiButton(string _img) : GuiNode(){
 }
 
 bool GuiButton::processMouse(int _x, int _y, int _state){
-    cout << name << " being checked." << endl;
+    //cout << name << " being checked." << endl;
     if(_state == MOUSE_STATE_DOWN){
-        cout << name << " checking isInside." << endl;
+        //cout << name << " checking isInside." << endl;
         if(isInside(_x,_y)){
-			cout << "button clicked." << endl;
+			//cout << "button clicked." << endl;
             execute();
             return true;
         }
@@ -58,5 +58,7 @@ void GuiButton::draw(){
         } else {
             active.draw(pos.x,pos.y);
         }
+    } else {
+        //ofRect(pos.x, pos.y, size.x, size.y);
     }
 }

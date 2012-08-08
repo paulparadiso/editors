@@ -13,6 +13,7 @@ void testApp::setup(){
     img.loadImage("cuts/main_bg_20.png");
     ofToggleFullscreen();
     ofSetFrameRate(30);
+    sfxPlayer = new SoundEffectsPlayer();
 }
 
 //--------------------------------------------------------------

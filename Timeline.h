@@ -3,6 +3,10 @@
 
 #include "ofMain.h"
 #include "Clip.h"
+#include "Observer.h"
+#include "Subject.h"
+#include "SubObMediator.h"
+#include "Timer.h"
 
 class ClipContainer{
 
@@ -38,15 +42,27 @@ public:
     int getEffectStatus(){return clip->getEffectStatus();}
     void setEffectStatus(int _effectStatus){clip->setEffectStatus(_effectStatus);}
 
+    /*New Frame Controls*/
+    int getCurrentFrame(){return clip->getCurrentFrame();}
+    int getTotalNumFrames(){return clip->getTotalNumFrames();}
+    unsigned char* getPixels(){return clip->getPixels();}
+    void setFrame(int _frameNum){clip->setFrame(_frameNum);}
+
+    int getStartFrame(){return startFrame;}
+    int getStopFrame(){return stopFrame;}
+    void setStartFrame(int _startFrame);
+
 private:
     Clip* clip;
+    int startFrame;
+    int stopFrame;
 };
 
-class Timeline {
+class Timeline : public Observer, public Subject{
 
 public:
 
-    Timeline(float _totalTime);
+    Timeline(float _totalTime, string _name);
     void addClip(Clip *_clip);
     void addClip(Clip *_clip, string _id);
     void removeClip(Clip *_clip);
@@ -58,6 +74,7 @@ public:
     void restart();
     void update();
     void update(float);
+    void update(string _subName, Subject* _sub);
     void updateRun();
     void reset();
     void draw(int _x, int _y, int _sx, int _sy);
@@ -75,6 +92,16 @@ public:
     void setupRun();
     void clear();
 
+    /*New frame functions*/
+    int getCurrentFrame();
+    void setFrame(int _frame);
+    unsigned char* getPixels();
+    int getNumFrames(){return numFrames;}
+    void compositeFrames(unsigned char* _one, unsigned char* _two, int _w, int _h, int _bd);
+    bool hasNewFrame(){return bHaveNewFrame;}
+
+    string getAttr(const char* _key){return attrs[_key];}
+
 private:
     vector<ClipContainer*> clips;
     map<float,Clip*> mappedClips;
@@ -84,7 +111,12 @@ private:
     bool isPlaying;
     bool isTransitioning;
     int totalLength;
-    float timeRemaining;
+    int timeRemaining;
+    map<string,string> attrs;
+
+    int numFrames;
+    unsigned char * frameBuffer;
+    bool bHaveNewFrame;
 };
 
 #endif // TIMELINE_H_INCLUDED

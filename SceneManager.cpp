@@ -11,7 +11,15 @@ SceneManager* SceneManager::Instance(){
 
 SceneManager::SceneManager(){
     haveMask = false;
+    numberRenderer = new GuiNumberRenderer();
+    timeRemaining.loadImage("cuts/time_remaining.png");
+    timeRemainingArabic.loadImage("cuts/time_remaining_arabic.png");
+    displayArabic = false;
+    timeRemainingPos.set(120,245);
+    timeRemainingPosArabic.set(230,245);
     SubObMediator::Instance()->addObserver("mouse-changed", this);
+    SubObMediator::Instance()->addObserver("button", this);
+    SubObMediator::Instance()->addObserver("time-remaining", this);
 }
 
 void SceneManager::reset(){
@@ -61,11 +69,26 @@ void SceneManager::popSheet(){
 }
 
 void SceneManager::update(string _subName, Subject *_sub){
-    string mouseState = _sub->getAttr("mouseState");
-    int mouseX = ofToInt(_sub->getAttr("mouseX"));
-    int mouseY = ofToInt(_sub->getAttr("mouseY"));
-    //cout << "Received mouse change. State = " << mouseState << ", x = " << mouseX << ", y = " << mouseY << endl;
-    drawStack.back()->checkNodes(mouseX,mouseY,mouseState);
+    if(_subName == "mouse-changed"){
+        string mouseState = _sub->getAttr("mouseState");
+        int mouseX = ofToInt(_sub->getAttr("mouseX"));
+        int mouseY = ofToInt(_sub->getAttr("mouseY"));
+        //cout << "Received mouse change. State = " << mouseState << ", x = " << mouseX << ", y = " << mouseY << endl;
+        drawStack.back()->checkNodes(mouseX,mouseY,mouseState);
+    }
+    if(_subName == "button"){
+        string action = _sub->getAttr("action");
+        string target = _sub->getAttr("target");
+        if(target == "language" && action == "switch"){
+            displayArabic = !displayArabic;
+        }
+    }
+    if(_subName == "time-remaining"){
+        string track = _sub->getAttr("name");
+        int time = ofToInt(_sub->getAttr("time"));
+        cout << "time remaining for track " << track << " updated to " << time << endl;
+        timeRemainingOnTrack[track] = time;
+    }
  }
 
 GuiSheet* SceneManager::getTopSheet(){
@@ -95,5 +118,20 @@ void SceneManager::draw(){
         for(gIter = drawStack.begin(); gIter != drawStack.end(); ++gIter){
             (*gIter)->draw();
         }
+    }
+}
+
+void SceneManager::drawTimeRemaining(string _track){
+    map<string,int>::iterator mIter;
+    mIter = timeRemainingOnTrack.find(_track);
+    if(mIter == timeRemainingOnTrack.end()){
+        timeRemainingOnTrack[_track] = 60;
+    }
+    if(!displayArabic){
+        timeRemaining.draw(timeRemainingPos.x, timeRemainingPos.y);
+        drawNumber(timeRemainingOnTrack[_track],450,251,41,25,1);
+    } else {
+        timeRemainingArabic.draw(timeRemainingPosArabic.x, timeRemainingPosArabic.y);
+        drawNumber(timeRemainingOnTrack[_track],130,250,91,30,1);
     }
 }

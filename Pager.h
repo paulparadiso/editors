@@ -5,10 +5,13 @@
 #include "GuiCreator.h"
 #include "ofxXmlSettings.h"
 #include "GuiMediaPreview.h"
+#include "Observer.h"
+#include "Subject.h"
+#include "SubObMediator.h"
 
 ofTexture getVideoPreview(string _path, float _pos);
 
-class PagerItem : public GuiNode, public Subject{
+class PagerItem : public GuiNode, public Subject, public Observer{
 
 public:
     PagerItem() : GuiNode(){}
@@ -21,12 +24,19 @@ public:
     void setDisplaySize(int _x, int _y);
     void setPagerPadding(int _x, int _y);
     void setItemPadding(int _x, int _y);
+    void update(string _subName, Subject *_sub);
+    string getItemIndex(){return itemIndex;}
+    string getItemType(){return itemType;}
 
 protected:
     ofVec2f basePos;
     ofVec2f displaySize;
     ofVec2f itemPadding;
     ofVec2f pagerPadding;
+    int timeRemainingOnTrack;
+    string itemType;
+    string itemIndex;
+    //GuiNumberRenderer *numberRenderer;
 };
 
 class VideoItem : public PagerItem{
@@ -50,6 +60,7 @@ private:
     ofImage frame;
     string duration;
     string drawDuration;
+    int durationInt;
     //string path;
     //string type;
     //string target;
@@ -75,7 +86,7 @@ public:
     void setAllAttr(string _attr, string _val);
 
 protected:
-    vector<PagerItem*>items;
+    map<int,PagerItem*>items;
     void message(map<string,string> _msg);
     int currentPage;
     int numItemsPerPage;
@@ -89,6 +100,7 @@ protected:
     bool drawPrevious;
     bool drawNext;
     ofTrueTypeFont texter;
+    string activeTimeline;
 };
 
 class VideoPager : public Pager {

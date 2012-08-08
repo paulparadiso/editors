@@ -1,4 +1,5 @@
 #include "Observer.h"
+#include "SubObMediator.h"
 
 Observer::Observer()
 {
@@ -7,7 +8,7 @@ Observer::Observer()
 
 Observer::~Observer()
 {
-    //dtor
+    SubObMediator::Instance()->removeObserver(this);
 }
 
 void Observer::update(string _subName, Subject* _sub){
