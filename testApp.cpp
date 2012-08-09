@@ -18,6 +18,7 @@ void testApp::setup(){
 
 //--------------------------------------------------------------
 void testApp::update(){
+    //Compositor::Instance()->update();
     SceneManager::Instance()->update();
     //cout << "Frame rate = " << ofGetFrameRate() << endl;
 }

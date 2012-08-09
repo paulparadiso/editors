@@ -163,6 +163,7 @@ VideoPager::VideoPager(map<string, string> & _attrs) : Pager(_attrs){
     lister.allowExt("xml");
     lister.listDir(dir);
     string folder = dir + "/";
+    cout << dir << " has " << lister.size() << " items." << endl;
     for(int i = 0; i < lister.size(); i++){
         //xml.loadFile(lister.getPath(i));
         //string type = xml.getValue("type","none");
@@ -176,6 +177,7 @@ VideoPager::VideoPager(map<string, string> & _attrs) : Pager(_attrs){
         if(tmpItemPtr->getItemType() == "audio"){
             int index = ofToInt(tmpItemPtr->getItemIndex());
             //items[index] = tmpItemPtr;
+            cout << "adding item to " << index << endl;
             items[index] = tmpItemPtr;
         } else {
             //items.push_back(tmpItemPtr);

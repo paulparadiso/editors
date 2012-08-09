@@ -7,11 +7,12 @@
 #include "Subject.h"
 #include "SubObMediator.h"
 #include "Timer.h"
+#include "Effects.h"
 
-class ClipContainer{
+class ClipContainer : public Observer, public Subject{
 
 public:
-    ClipContainer(Clip* _clip){clip = _clip;}
+    ClipContainer(Clip* _clip);
     Clip* getClip(){return clip;}
     void play(){clip->play();}
     void play(float _runningTime){clip->play(_runningTime);}
@@ -34,28 +35,44 @@ public:
     void releaseTransitionFrame(){clip->releaseTransitionFrame();}
     unsigned char * getLastFrame(){return clip->getLastFrame();}
 
+    void update(string _subName, Subject* _sub);
+
+    float getDuration(){return clip->getDuration();}
+
     int getDataLength(){clip->getDataLength();}
     float* getData(){return clip->getData();}
 
     void setPosition(float _pos){clip->setPosition(_pos);}
-    string clipID;
     int getEffectStatus(){return clip->getEffectStatus();}
-    void setEffectStatus(int _effectStatus){clip->setEffectStatus(_effectStatus);}
+    void setEffectStatus(int _effectStatus){effectStatus = _effectStatus;}
 
     /*New Frame Controls*/
     int getCurrentFrame(){return clip->getCurrentFrame();}
     int getTotalNumFrames(){return clip->getTotalNumFrames();}
-    unsigned char* getPixels(){return clip->getPixels();}
+    unsigned char* getPixels();
     void setFrame(int _frameNum){clip->setFrame(_frameNum);}
 
     int getStartFrame(){return startFrame;}
     int getStopFrame(){return stopFrame;}
     void setStartFrame(int _startFrame);
+    void adjustStartFrame(int _amt);
+
+    bool hasCrossfade(){return bCrossfade;}
+    void setTransitionOut(bool _fade){clip->setFadeOut(_fade);}
+    bool hasTransition();
 
 private:
+    /*Effects*/
+    float duration;
+    int effectStatus;
     Clip* clip;
     int startFrame;
     int stopFrame;
+    unsigned char * buffer;
+    string clipID;
+    bool bHaveTransition;
+    bool bCrossfade;
+
 };
 
 class Timeline : public Observer, public Subject{
@@ -97,10 +114,13 @@ public:
     void setFrame(int _frame);
     unsigned char* getPixels();
     int getNumFrames(){return numFrames;}
-    void compositeFrames(unsigned char* _one, unsigned char* _two, int _w, int _h, int _bd);
+    void compositeFrames(unsigned char* _one, unsigned char* _two, int _w, int _h, int _bd, bool _blend);
     bool hasNewFrame(){return bHaveNewFrame;}
+    void adjustStartFrames(int _amt);
 
     string getAttr(const char* _key){return attrs[_key];}
+    void adjustForTransition(bool _on);
+    bool isCompositing(){return bCompositing;}
 
 private:
     vector<ClipContainer*> clips;
@@ -116,7 +136,9 @@ private:
 
     int numFrames;
     unsigned char * frameBuffer;
+    unsigned char * output;
     bool bHaveNewFrame;
+    bool bCompositing;
 };
 
 #endif // TIMELINE_H_INCLUDED

@@ -44,6 +44,13 @@ void GuiTimelineButton::update(string _subName, Subject* _sub){
             }
             cout << "active effect = " << activeEffect << endl;
             outerCurve.setStrokeColor(*colors[activeEffect]);
+            attrs.erase("effect");
+            if(activeEffect == "none"){
+                attrs["effect"] = "0";
+            } else {
+                attrs["effect"] = ofSplitString(activeEffect, "_")[1];
+            }
+            SubObMediator::Instance()->update("new-effect", this);
             bAwaitingResponse = false;
         }
     }

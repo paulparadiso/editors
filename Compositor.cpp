@@ -38,6 +38,9 @@ Compositor::Compositor(){
     SubObMediator::Instance()->addObserver("clip-selected", this);
     SubObMediator::Instance()->addObserver("button", this);
     SubObMediator::Instance()->addObserver("timer-tick", this);
+    SubObMediator::Instance()->addObserver("update-timeline-framecount", this);
+    SubObMediator::Instance()->addObserver("sheet-changed", this);
+    SubObMediator::Instance()->addObserver("scrubber-position-changed", this);
     videoTimeline = NULL;
 }
 
@@ -51,6 +54,7 @@ void Compositor::update(string _subName, Subject* _sub){
         addClipToTimeline(activeTimeline, MediaCabinet::Instance()->getClip(clipName));
     }
     if(_subName == "button"){
+        cout << "compositor got an action of " << _sub->getAttr("action") << endl;
         if(_sub->getAttr("target-type") == "timeline"){
             activeTimeline = _sub->getAttr("name");
         }
@@ -74,7 +78,28 @@ void Compositor::update(string _subName, Subject* _sub){
         //cout << "Timer Tick" << endl;
         if(numFrames > 0){
             currentFrame = (currentFrame + 1) % numFrames;
+            if(!videoTimeline->isCompositing()){
+                videoTimeline->setFrame(currentFrame);
+            }
+        }
+        float timePos = (float)currentFrame / (float)maxNumFrames;
+        setAttr("time-pos",ofToString(timePos));
+        SubObMediator::Instance()->update("timeline-position-changed",this);
+    }
+    if(_subName == "update-timeline-framecount"){
+        numFrames = videoTimeline->getNumFrames();
+        cout << "updated numFrames to " << numFrames << endl;
+    }
+    if(_subName == "sheet-changed"){
+        pause();
+    }
+    if(_subName == "scrubber-position-changed"){
+        float inPct = ofToFloat(_sub->getAttr("time-pos"));
+        currentFrame = maxNumFrames * inPct;
+        if(currentFrame < numFrames && numFrames > 0){
             videoTimeline->setFrame(currentFrame);
+        } else {
+            blackOut();
         }
     }
 }
@@ -141,8 +166,8 @@ void Compositor::addTimeline(string _name, string _mode){
 }
 
 void Compositor::blackOut(){
-    //masterTex->loadData(black, 853, 480, GL_RGB);
-    memset(masterBuffer,0,853 * 480 * 3);
+    masterTex->loadData(black, 853, 480, GL_RGB);
+    //memset(masterBuffer,0,853 * 480 * 3);
 }
 
 void Compositor::addClipToTimeline(string _timeline, Clip* _clip){
@@ -262,10 +287,12 @@ void Compositor::update(){
 */
 
 void Compositor::update(){
+    numFrames = videoTimeline->getNumFrames();
     if(videoTimeline){
         if(videoTimeline->hasNewFrame()){
-            cout << "updating Compositor" << endl;
-            masterTex->loadData(videoTimeline->getPixels(), 853, 480, GL_RGB);
+            if(!videoTimeline->isCompositing()){
+                masterTex->loadData(videoTimeline->getPixels(), 853, 480, GL_RGB);
+            }
         }
     }
 }
@@ -346,6 +373,7 @@ void Compositor::rewind(){
     //playState = PLAY_STATE_STOPPED;
     //start();
     currentFrame = 0;
+    timer->start();
 }
 
 void Compositor::startRecording(){

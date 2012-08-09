@@ -3,91 +3,7 @@
 
 #include "ofMain.h"
 #include "sndfile.h"
-
-enum{
-    VIDEO_EFFECT_NONE,
-    VIDEO_EFFECT_ROTATE,
-    VIDEO_EFFECT_WIPE,
-    VIDEO_EFFECT_FADE,
-    VIDEO_EFFECT_CROSS
-};
-
-enum{
-    AUDIO_EFFECT_NONE,
-    AUDIO_EFFECT_FADE_IN_OUT,
-    AUDIO_EFFECT_VOLUME_DOWN,
-    AUDIO_EFFECT_VOLUME_UP,
-    AUDIO_EFFECT_ECHO,
-    AUDIO_EFFECT_MUTE
-};
-
-class Effect{
-
-public:
-    Effect(float _duration){clipDuration = _duration;}
-    Effect(float _clipDuration, float _effectLength, float _effectStart, float _multiplier){clipDuration = _clipDuration;
-                                                                                            effectLength = _effectLength;
-                                                                                            effectStart = _effectStart;
-                                                                                            multiplier = _multiplier;
-                                                                                            }
-    void setClipDuration(float _clipDuration){clipDuration = _clipDuration;}
-    void setEffectLength(float _effectsLength){effectLength = _effectsLength;}
-    void setEffectStart(float _effectStart){effectStart = _effectStart;}
-    void setMultiplier(float _multiplier){multiplier = _multiplier;}
-    virtual void process(unsigned char* _buf, unsigned char * _oBuf, int _w, int _h, float _pct) = 0;
-    virtual ~Effect(){}
-
-protected:
-    float clipDuration;
-    float effectLength;
-    float effectStart;
-    float multiplier;
-};
-
-class FadeToBlack : public Effect{
-
-public:
-    FadeToBlack(float _clipDuration);
-    FadeToBlack(float _clipDuration, float _effectLength, float _effectStart, float _multiplier);
-    void process(unsigned char* _buf,  unsigned char * _oBuf, int _w, int _h, float _pos);
-
-private:
-    void fadeIn(unsigned char* _buf, unsigned char* _oBuf, int _w, int _h, float _pos);
-    void fadeOut(unsigned char* _buf, unsigned char* _oBuf, int _w, int _h, float _pos);
-};
-
-class Greyscale : public Effect{
-
-public:
-    Greyscale(float _clipDuration);
-    Greyscale(float _clipDuration, float _effectLength, float _effectStart, float _multiplier);
-    void process(unsigned char* _buf,  unsigned char * _oBuf, int _w, int _h, float _pos);
-
-};
-
-class Wipe : public Effect{
-
-public:
-    Wipe(float _clipDuration);
-    Wipe(float _clipDuration, float _effectLength, float _effectStart, float _multiplier);
-    void process(unsigned char* _buf,  unsigned char * _oBuf, int _w, int _h, float _pos);
-
-private:
-    void wipeIn(unsigned char* _buf, unsigned char * _oBuf, int _w, int _h, float _pos);
-    void wipeOut(unsigned char* _buf, unsigned char * _oBuf, int _w, int _h, float _pos);
-};
-
-class Rotate : public Effect{
-
-public:
-    Rotate(float _clipDuration);
-    Rotate(float _clipDuration, float _effectLength, float _effectStart, float _multiplier);
-    void process(unsigned char* _buf,  unsigned char * _oBuf, int _w, int _h, float _pos);
-
-private:
-    unsigned char* processedBuffer;
-
-};
+#include "Effects.h"
 
 class Clip{
 
@@ -128,41 +44,29 @@ public:
 
     /*Transitions*/
 
-    void setWipeOut(bool _wipeOut){bWipeOut = _wipeOut;}
-    void setWipeIn(bool _wipeIn){bWipeIn = _wipeIn;}
-    void setFadeOut(bool _fadeOut){bFadeOut = _fadeOut;}
-    void setFadeIn(bool _fadeIn){bFadeIn = _fadeIn;}
+    void setTransitionFade(bool _b){bFadeOut = _b;}
+    bool getTransitionFade(){return bFadeOut;}
 
-    bool getWipeOut(){return wipeOut;}
-    bool getWipeIn(){return wipeIn;}
-    bool getFadeIn(){return fadeIn;}
-    bool getFadeOut(){return fadeOut;}
-
-    Wipe *wipeOut;
-    Wipe *wipeIn;
-    FadeToBlack *fadeOut;
-    FadeToBlack *fadeIn;
-
-    string getType(){return type;}
     string getName(){return name;}
+    string getType(){return type;}
     int getEffectStatus(){return effectStatus;}
     virtual void setEffectStatus(int _effectStatus){};
 
     virtual int getDataLength(){}
     virtual float* getData(){}
 
+    void setFadeOut(bool _fade){bFadeOut = _fade;}
+
 protected:
     string name;
     string type;
     int effectStatus;
     vector<Effect*> effects;
+    Effect *fadeOut;
+    bool bFadeOut;
     float startTime;
     float stopTime;
     float duration;
-    bool bWipeIn;
-    bool bWipeOut;
-    bool bFadeIn;
-    bool bFadeOut;
     bool bPlayingPreview;
 
 };
@@ -213,6 +117,7 @@ private:
     int vw, vh;
     FadeToBlack* fader;
     Wipe* wiper;
+    float framerateAdjust;
 };
 
 class ImageClip : public Clip{

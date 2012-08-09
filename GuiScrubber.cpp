@@ -13,8 +13,9 @@ GuiScrubber::GuiScrubber(map<string,string> &_attrs){
     lastX = homeX;
     maxX = 1446;
     lastPct = 0.0;
-    SubObMediator::Instance()->addObserver("timeline-changed",this);
+    SubObMediator::Instance()->addObserver("timeline-position-changed",this);
     bActivated = false;
+    attrs["action"] = "control";
 }
 
 void GuiScrubber::execute(){
@@ -31,27 +32,42 @@ bool GuiScrubber::isDragging(int _x, int _y){
 }
 
 bool GuiScrubber::processMouse(int _x, int _y, int _state){
+    if(bActivated && _state == MOUSE_STATE_UP){
+        cout << "scrubber off" << endl;
+        bActivated = false;
+        attrs.erase("name");
+        attrs["name"] = "play";
+        SubObMediator::Instance()->update("button", this);
+        return true;
+    }
+    if(bActivated && _state == MOUSE_STATE_DRAG){
+        executeDrag(_x, _y);
+        return true;
+    }
     if(isInside(_x, _y)){
-        if(bActivated && _state == MOUSE_STATE_UP){
-            bActivated = false;
-            return true;
-        }
         if(!bActivated && _state == MOUSE_STATE_DOWN){
+            cout << "scrubber on" << endl;
             bActivated = true;
+            attrs.erase("name");
+            attrs["name"] = "pause";
+            SubObMediator::Instance()->update("button", this);
             return true;
         }
-        if(bActivated && _state == MOUSE_STATE_DRAG){
-            executeDrag(_x, _y);
-            return true;
-        }
-        return true; //catchall just in case
     } else {
         return false;
     }
 }
 
+bool GuiScrubber::isInside(int _x, int _y){
+    //cout << name << " checking insides." << pos.x << ", " << size.x << endl;
+    if((_x > pos.x - 20 && _x < ((pos.x - 20) + size.x + 40)) &&
+       (_y > pos.y - 20 && _y < ((pos.y  - 20) + size.y + 40))){
+           return true;
+       }
+    return false;
+}
+
 void GuiScrubber::executeDrag(int _x, int _y){
-    cout << "scrubber moving..." << endl;
     pos.x += _x - pos.x;
     if(pos.x < homeX){
         pos.x = homeX;
@@ -63,6 +79,7 @@ void GuiScrubber::executeDrag(int _x, int _y){
     if(abs(pct - lastPct) > 0.01){
         //Compositor::Instance()->setScrubberPosition(pct);
         attrs["time-pos"] = ofToString(pct);
+        SubObMediator::Instance()->update("scrubber-position-changed", this);
         lastPct = pct;
     }
 }
@@ -76,6 +93,8 @@ void GuiScrubber::update(){
 void GuiScrubber::update(string _subName, Subject *_sub){
     string sPct = _sub->getAttr("time-pos");
     pct = lastPct = ofToFloat(sPct);
+    //cout << "scrubber set position to " << pct << endl;
+    pos.x = homeX + (maxX - homeX) * pct;
 }
 
 void GuiScrubber::draw(){

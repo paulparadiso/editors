@@ -25,6 +25,7 @@ class GuiTimelineButton : public GuiButton
         void update(string _subName, Subject* _sub);
         void setAwaitingResponse(bool _b){bAwaitingResponse = _b;}
         bool getIsAwaitingResponse(){return bAwaitingResponse;}
+        void setId(string _id){id = _id;}
 
     protected:
     private:
@@ -36,6 +37,8 @@ class GuiTimelineButton : public GuiButton
         ofPath dropShadow;
         ofPath innerCurve;
         ofPath outerCurve;
+
+        string id;
 
         map<string,ofColor*> colors;
         string activeEffect;

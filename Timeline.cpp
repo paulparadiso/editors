@@ -3,9 +3,62 @@
 #include "Compositor.h"
 #include "sndfile.h"
 
+ClipContainer::ClipContainer(Clip* _clip){
+    clip = _clip;
+    SubObMediator::Instance()->addObserver("new-effect", this);
+}
+
 void ClipContainer::setStartFrame(int _startFrame){
     startFrame = _startFrame;
     stopFrame = startFrame + clip->getTotalNumFrames();
+}
+
+void ClipContainer::adjustStartFrame(int _amt){
+    cout << "old start frame = " << startFrame << endl;
+    startFrame += _amt;
+    stopFrame += _amt;
+    cout << "new start frame = " << startFrame << endl;
+}
+
+unsigned char* ClipContainer::getPixels(){
+    clip->setEffectStatus(effectStatus);
+    return clip->getPixels();
+}
+
+void ClipContainer::update(string _subName, Subject* _sub){
+    if(_subName == "new-effect"){
+        string id = _sub->getAttr("name");
+        string fx = _sub->getAttr("effect");
+        //cout << clipID << " --- " << id << " --- " << fx << endl;
+        int oldEffect = effectStatus;
+        if(clipID == id){
+            effectStatus = ofToInt(fx);
+            if(effectStatus == 2 || effectStatus == 4){
+                cout << "turning on transition effect.";
+                bHaveTransition = true;
+                if(effectStatus == 4){
+                    bCrossfade = true;
+                } else {
+                    cout << "this effect will not blend" << endl;
+                    bCrossfade = false;
+                }
+                SubObMediator::Instance()->update("transition-effect-on", this);
+            }
+            if(effectStatus == 0 && (oldEffect == 2 || oldEffect == 4)){
+                bHaveTransition = true;
+                SubObMediator::Instance()->update("transition-effect-off", this);
+            }
+        }
+    }
+}
+
+bool ClipContainer::hasTransition(){
+    if(bHaveTransition){
+        bHaveTransition = false;
+        return true;
+    } else {
+        return false;
+    }
 }
 
 Timeline::Timeline(float _totalTime, string _name){
@@ -19,15 +72,19 @@ Timeline::Timeline(float _totalTime, string _name){
     isTransitioning = false;
     setScrubTime(0.0);
     SubObMediator::Instance()->addObserver("timeline-clip-removed", this);
+    SubObMediator::Instance()->addObserver("transition-effect-on", this);
+    SubObMediator::Instance()->addObserver("transition-effect-off", this);
     frameBuffer = new unsigned char[853 * 480 * 3];
+    output = new unsigned char[853 * 480 * 3];
     memset(frameBuffer, 0, 853 * 480 *3);
     bHaveNewFrame = true;
     attrs["name"] = _name;
+    bCompositing = false;
 }
 
 unsigned char * Timeline::getPixels(){
     bHaveNewFrame = false;
-    return frameBuffer;
+    return output;
 }
 
 void Timeline::addClip(Clip *_clip){
@@ -77,6 +134,7 @@ void Timeline::addClip(Clip* _clip, string _id){
     numFrames += clips.back()->getTotalNumFrames();
     //cout << "Timeline numFrames = " << numFrames << endl;
     int timeRemaining = (int)(60 - (numFrames / 24));
+    attrs.erase("time");
     attrs["time"] = ofToString(timeRemaining);
     SubObMediator::Instance()->update("time-remaining",this);
 }
@@ -101,12 +159,56 @@ void Timeline::removeClip(Clip *_clip){
     }
 }
 
+void Timeline::adjustStartFrames(int _amt){
+    vector<ClipContainer*>::iterator cIter;
+    for(cIter = clips.begin(); cIter != clips.end(); ++cIter){
+        (*cIter)->adjustStartFrame(_amt);
+    }
+}
+
 void Timeline::update(string _subName, Subject* _sub){
     if(_subName == "timeline-clip-removed"){
         //string clipID = _sub->getAttr("clip-to-remove");
         cout << "need to remove " << _sub->getAttr("clip-to-remove") << endl;
         removeClip(_sub->getAttr("clip-to-remove"));
+        SubObMediator::Instance()->update("update-timeline-framecount",this);
     }
+    if(_subName == "transition-effect-on"){
+        adjustForTransition(true);
+    }
+    if(_subName == "transition-effect-off"){
+        adjustForTransition(false);
+    }
+}
+
+void Timeline::adjustForTransition(bool _on){
+    int framesToAdjust = 0;
+    vector<ClipContainer*>::iterator cIter;
+    for(cIter = clips.begin(); cIter != clips.end(); ++cIter){
+        if((*cIter)->hasTransition()){
+            if(cIter != clips.begin()){
+                cout << "found transition." << endl;
+                if(_on){
+                    framesToAdjust = -24;
+                } else {
+                    framesToAdjust = 24;
+                }
+                (*cIter)->adjustStartFrame(framesToAdjust);
+                if(cIter != clips.begin()){
+                    vector<ClipContainer*>::iterator dIter = cIter;
+                    dIter--;
+                    if((*cIter)->hasCrossfade()){
+                        (*dIter)->setTransitionOut(true);
+                    } else {
+                        (*dIter )->setTransitionOut(false);
+                    }
+                }
+            }
+        } else {
+            (*cIter)->adjustStartFrame(framesToAdjust);
+        }
+    }
+    numFrames += framesToAdjust;
 }
 
 void Timeline::setFrame(int _frame){
@@ -128,22 +230,34 @@ void Timeline::setFrame(int _frame){
         }
     }
     if(bNewFrame){
-        cout << "copying new frame." << endl;
-        memcpy(frameBuffer, (*activeClips.begin())->getPixels(), 853 * 480 * 3);
-        for(cIter = activeClips.begin() + 1; cIter != activeClips.end(); ++cIter){
-            compositeFrames(frameBuffer, (*cIter)->getPixels(), 853, 480, 3);
+        if(activeClips.size() > 0){
+            memcpy(frameBuffer, (*activeClips.begin())->getPixels(), 853 * 480 * 3);
+            for(cIter = activeClips.begin() + 1; cIter != activeClips.end(); ++cIter){
+                compositeFrames(frameBuffer, (*cIter)->getPixels(), 853, 480, 3, (*cIter)->hasCrossfade());
+            }
+            memcpy(output, frameBuffer, 853 * 480 * 3);
+            bHaveNewFrame = true;
         }
-        bHaveNewFrame = true;
     }
 }
 
-void Timeline::compositeFrames(unsigned char* _one, unsigned char* _two, int _w, int _h, int _bd){
+void Timeline::compositeFrames(unsigned char* _one, unsigned char* _two, int _w, int _h, int _bd, bool _blend){
     for(int y = 0; y < _h; y++){
+        //cout << "y = " << y << endl;
         for(int x = 0; x < _w * _bd; x++){
             int index = y * (_w * _bd) + x;
-            _one[index] = (_one[index] + _two[index]) / 2;
-            _one[index + 1] = (_one[index + 1] + _two[index + 1]) / 2;
-            _one[index + 2] = (_one[index + 2] + _two[index + 2]) / 2;
+            if(_blend){
+                _one[index] = (_one[index] + _two[index]) / 2;
+                _one[index + 1] = (_one[index + 1] + _two[index + 1]) / 2;
+                _one[index + 2] = (_one[index + 2] + _two[index + 2]) / 2;
+            } else {
+                int sum = _two[index] + _two[index + 1] + _two[index + 3];
+                if(sum != 0){
+                    _one[index] = _two[index];
+                    _one[index + 1] = _two[index + 1];
+                    _one[index + 2] = _two[index + 2];
+                }
+            }
         }
     }
 }
@@ -158,34 +272,33 @@ void Timeline::removeClip(string _id){
             Compositor::Instance()->blackOut();
         }
     }
+    int framesToAdjust = 0;
     vector<ClipContainer*>::iterator cIter;
-    for(cIter = clips.begin(); cIter != clips.end(); ++cIter){
+    for(cIter = clips.begin(); cIter != clips.end();){
         string tmpID = (*cIter)->getID();
         cout << "checking id against " << tmpID << endl;
         if(tmpID == _id){
-            (*cIter)->stop();
+            //(*cIter)->stop();
             cout << "timeline removing clip" << endl;
-            //MediaCabinet::Instance()->removeClip((*cIter));
+                //MediaCabinet::Instance()->removeClip((*cIter));
+            int tmpFrameCnt = numFrames;
             numFrames -= (*cIter)->getTotalNumFrames();
             int timeRemaining = (int)(60 - (numFrames / 24));
             attrs["time"] = ofToString(timeRemaining);
             SubObMediator::Instance()->update("time-remaining",this);
-            clips.erase(cIter);
-            if((*cIter)->getType() == "video" && clips.size() < 1){
-                cout << "clips empty.  blacking out video" << endl;
-                Compositor::Instance()->blackOut();
-            }
-            MediaCabinet::Instance()->decreaseClipHold((*cIter)->getClip());
-            break;
+            framesToAdjust = numFrames - tmpFrameCnt;
+            delete (*cIter);
+            cIter = clips.erase(cIter);
+            //MediaCabinet::Instance()->decreaseClipHold((*cIter)->getClip());
+            //break;
+        } else {
+            (*cIter)->adjustStartFrame(framesToAdjust);
+            cIter++;
         }
     }
-    for(int i = 0; i < clips.size(); i++){
-        clips[i]->releaseTransitionFrame();
-        if(i > 0){
-            clips[i]->setTransitionFrame(clips[i - 1]->getLastFrame());
-        }
+    if(clips.size() == 0){
+        Compositor::Instance()->blackOut();
     }
-    //clips.front()->releaseTransitionFrame();
 }
 
 void Timeline::setupRun(){

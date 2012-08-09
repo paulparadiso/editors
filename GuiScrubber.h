@@ -18,8 +18,9 @@ public:
     void update();
     void update(string _subName, Subject *_sub);
     void draw();
-    string getAttrs(const char* _key){return attrs[_key];}
+    string getAttr(const char* _key){return attrs[_key];}
     float getPercent(){return pct;}
+    bool isInside(int _x, int _y);
 
 private:
     float homeX, lastX, maxX;
@@ -28,6 +29,8 @@ private:
     ofImage ball;
     ofImage stick;
     bool bActivated;
+    ofVec2f selectionPos;
+    ofVec2f selectionSize;
 };
 
 #endif // GUISCRUBBER_H

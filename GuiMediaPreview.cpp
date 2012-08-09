@@ -140,14 +140,14 @@ bool GuiMediaPreview::processMouse(int _x, int _y, int _state){
 		if(exit->isInside(_x, _y)){
 			exit->execute();
 			preview->stopPreview();
-			preview = NULL;
+			//preview = NULL;
 			return true;
 		}
         if(select->isInside(_x,_y)){
             select->execute();
-            select->setChannel("button");
+            //select->setChannel("button");
             preview->stopPreview();
-            preview = NULL;
+            //preview = NULL;
             return true;
         }
         if(play){

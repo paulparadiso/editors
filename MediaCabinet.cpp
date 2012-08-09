@@ -20,6 +20,12 @@ void MediaCabinet::addClip(string _name, string _path){
     string type = loader.getValue("type");
     string duration = loader.getValue("duration");
     string path = loader.getValue("path");
+    map<string,Clip*>::iterator mIter;
+    mIter = cabinet.find(path);
+    if(mIter != cabinet.end()){
+        cout << path << " already in cabinet." << endl;
+        return;
+    }
     if(type == "video"){
         cout << "Media Cabinet adding video - " << path << endl;
         //delete cabinet[name];
