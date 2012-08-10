@@ -20,6 +20,16 @@ GuiButton::GuiButton(map<string, string> &_attrs) : GuiNode(){
     initialize();
     setName("button");
 	setChannel("button");
+	haveArabic = false;
+    displayArabic = false;
+    map<string,string>::iterator mIter;
+    mIter = attrs.find("arabic");
+    if(mIter != attrs.end()){
+        haveArabic = true;
+        displayArabic = true;
+        arabic.loadImage(attrs["arabic"]);
+        SubObMediator::Instance()->addObserver("button", this);
+    }
 }
 
 GuiButton::GuiButton(string _img) : GuiNode(){
@@ -49,12 +59,25 @@ void GuiButton::execute(){
 }
 
 void GuiButton::update(string _subName, Subject* _sub){
+    if(_subName == "button"){
+        string target = _sub->getAttr("target");
+        string action = _sub->getAttr("action");
+        if(target == "language" && action == "switch"){
+            if(haveArabic){
+                displayArabic = !displayArabic;
+            }
+        }
+    }
 }
 
 void GuiButton::draw(){
     if(haveImage){
         if(!drawActive){
-            inactive.draw(pos.x,pos.y);
+            if(displayArabic){
+                arabic.draw(pos.x,pos.y);
+            } else {
+                inactive.draw(pos.x,pos.y);
+            }
         } else {
             active.draw(pos.x,pos.y);
         }

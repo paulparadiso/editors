@@ -1,6 +1,6 @@
 #include "GuiTimeline.h"
 
-GuiTimelineButton::GuiTimelineButton(float _length) : GuiButton(){
+GuiTimelineButton::GuiTimelineButton(float _length, string _type) : GuiButton(){
     totalWidth = 1400;
     colors["none"] = new ofColor(255,255,255);
     colors["effect_1"] = new ofColor(172, 10, 117);
@@ -9,22 +9,21 @@ GuiTimelineButton::GuiTimelineButton(float _length) : GuiButton(){
     colors["effect_4"] = new ofColor(141, 198, 63);
     activeEffect = "none";
     curveRadius = 14;
+    type = _type;
     length = _length;
     if(length < 1.0){
         length = 1.0;
     }
-    height = 69;
-    width = totalWidth * length / 60;
-    setSize(width + 9,height);
-    curveBuffer = curveRadius * 2;
-    widthSegment = width - curveBuffer;
-    heightSegment = height - curveBuffer;
     makeDropShadow();
     makeButton();
     makeInnerCurve();
     makeOuterCurve();
     if(_length > 2.0){
-        img.loadImage("cuts/timeline_button_audio_big_blue.png");
+        if(type == "video"){
+            img.loadImage("cuts/timeline_button_video.png");
+        } else {
+            img.loadImage("cuts/timeline_button_audio_big_blue.png");
+        }
     } else {
         img.loadImage("cuts/timeline_button_saudio_small_blue.png");
     }
@@ -76,6 +75,12 @@ void GuiTimelineButton::makeDropShadow(){
 }
 
 void GuiTimelineButton::makeButton(){
+    height = 69;
+    width = totalWidth * length / 60;
+    setSize(width + 9,height);
+    curveBuffer = curveRadius * 2;
+    widthSegment = width - curveBuffer;
+    heightSegment = height - curveBuffer;
     buttonPath.setFillColor(ofColor(43,172,226));
     buttonPath.setFilled(true);
     buttonPath.moveTo(curveRadius, 0);
@@ -266,7 +271,7 @@ void GuiTimeline::addVideo(float _length, string _path){
     }
     //cout << "images size = " << images.size() << endl;
     */
-    images.push_back(new GuiTimelineButton(_length));
+    images.push_back(new GuiTimelineButton(_length, "video"));
     cout << "now have " << images.size() << " button(s) on timeline." << endl;
     //string tmpName = _path + ofToString(clipCounter++);
     //images.back()->setName(_path);
@@ -296,18 +301,20 @@ void GuiTimeline::addAudio(float _length, string _path){
         images.push_back(new GuiButton("cuts/timeline_audio_icon_30.png"));
     }
     */
-    images.push_back(new GuiTimelineButton(_length));
+    images.push_back(new GuiTimelineButton(_length, "audio"));
     //images.back()->setName(name + ofToString(clipCounter++));
-    string tmpName = _path + ofToString(clipCounter++);
-    images.back()->setName(tmpName);
+    //string tmpName = _path + ofToString(clipCounter++);
+    //images.back()->setName(tmpName);
+    images.back()->setChannel("button");
     images.back()->setAttr("action","open");
     images.back()->setAttr("target","audio-effects");
     images.back()->setAttr("target-type","timeline");
     images.back()->setAttr("path", _path);
+    images.back()->setAttr("name",_path);
     images.back()->setAttr("active-timeline",name);
     //images.back()->setAttr("length",ofToString(_length));
     images.back()->setDur(_length);
-    Compositor::Instance()->addClipToTimeline(name,MediaCabinet::Instance()->getClip(_path), images.back()->getName());
+    //Compositor::Instance()->addClipToTimeline(name,MediaCabinet::Instance()->getClip(_path), images.back()->getName());
 }
 
 bool GuiTimeline::processMouse(int _x, int _y, int _state){
@@ -316,8 +323,8 @@ bool GuiTimeline::processMouse(int _x, int _y, int _state){
         for(iIter = images.begin(); iIter != images.end(); ++iIter){
             if((*iIter)->isInside(_x, _y)){
                 cout << "OPENING EFFECTS MENU" << endl;
-                GuiConfigurator::Instance()->setGlobal("active-timeline", name);
-                GuiConfigurator::Instance()->addLoosie((*iIter));
+                //GuiConfigurator::Instance()->setGlobal("active-timeline", name);
+                //GuiConfigurator::Instance()->addLoosie((*iIter));
                 (*iIter)->execute();
                 (*iIter)->setAwaitingResponse(true);
                 return true;

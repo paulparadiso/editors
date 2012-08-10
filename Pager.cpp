@@ -256,17 +256,19 @@ void VideoItem::setupVideo(){
 void VideoItem::setupImage(){
     preview.loadImage(attrs["preview"]);
     mediaPreview = new GuiMediaPreview(attrs);
-    mediaPreview->setPosition(ofVec2f(-80,-100));
+    mediaPreview->setPosition(ofVec2f(407,278));
     msg["action"] = "add";
     msg["target"] = "video-timeline";
     msg["path"] = attrs["path"];
     msg["type"] = attrs["type"];
+    msg["name"] = name;
     msg["duration"] = "5";
+    durationInt = ofToInt(duration);
     mediaPreview->setSelectMessage(msg);
     previewSheet = new GuiSheet();
     previewSheet->addNode(mediaPreview);
     GuiConfigurator::Instance()->addSheet(attrs["path"],previewSheet);
-    frame.loadImage("cuts/menu_frame_time.png");
+    frame.loadImage("cuts/wide_frame.png");
     size.x = frame.getWidth();
     size.y = frame.getHeight();
 }
@@ -313,7 +315,10 @@ void VideoItem::executeVideo(){
 }
 
 void VideoItem::executeImage(){
-    GuiConfigurator::Instance()->openSheet(attrs["path"]);
+    if(durationInt < timeRemainingOnTrack){
+        MediaCabinet::Instance()->addClip(attrs["path"],attrs["path"]);
+        GuiConfigurator::Instance()->openSheet(attrs["path"]);
+    }
 }
 
 void VideoItem::executeAudio(){
@@ -348,10 +353,13 @@ void VideoItem::drawVideo(){
 }
 
 void VideoItem::drawImage(){
+    //pos = (basePos * ofVec2f(frame.getWidth(),frame.getHeight())) + pagerPadding + (itemPadding * basePos);
     pos = (basePos * ofVec2f(frame.getWidth(),frame.getHeight())) + pagerPadding + (itemPadding * basePos);
-    preview.draw(pos.x, pos.y + 20, displaySize.x, displaySize.y);
+    preview.draw(pos.x + 5, pos.y + 5, displaySize.x, displaySize.y);
+    //preview.draw(pos.x, pos.y + 20, displaySize.x, displaySize.y);
     frame.draw(pos.x, pos.y);
-    texter.drawString(":05", pos.x + 220, pos.y + 220);
+    //texter.drawString(":05", pos.x + 220, pos.y + 220);
+    SceneManager::Instance()->drawNumber(durationInt, pos.x + 193, pos.y + 105, 41, 25,0);
 }
 
 void VideoItem::drawAudio(){

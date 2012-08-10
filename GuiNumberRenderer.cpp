@@ -29,7 +29,7 @@ GuiNumberRenderer::GuiNumberRenderer(){
             clipTimeArabic[number].loadImage(path);
         }
     }
-    displayArabic = false;
+    displayArabic = true;
     SubObMediator::Instance()->addObserver("button", this);
 }
 

@@ -26,7 +26,7 @@ void MediaCabinet::addClip(string _name, string _path){
         cout << path << " already in cabinet." << endl;
         return;
     }
-    if(type == "video"){
+    if(type == "video" || type == "image"){
         cout << "Media Cabinet adding video - " << path << endl;
         //delete cabinet[name];
         cabinet[path] = new VideoClip(path);

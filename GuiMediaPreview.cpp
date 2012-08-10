@@ -16,7 +16,8 @@ GuiMediaPreview::GuiMediaPreview(map<string,string> &_attrs): GuiNode(){
     exit = NULL;
     select = NULL;
     play = NULL;
-    if(type == "video"){
+    //cout << "================>>>>>>>>>>>MEDIAPREVIEW<<<<<<<<<<<============== " << type << endl;
+    if(type == "video" || type == "image"){
         setupVideo();
     } else if (type == "audio"){
         setupAudio();
@@ -28,6 +29,9 @@ void GuiMediaPreview::setupVideo(){
     frame.loadImage("cuts/pb_preview_frame.png");
     exit = new GuiButton("cuts/preview_exit.png");
     select = new GuiButton("cuts/preview_add.png");
+    if(type == "video"){
+        play = new GuiButton("cuts/pb_preview_replay.png");
+    }
     exit->setAttr("action", "close");
     exit->setChannel("button");
     select->setAttr("action", "message");
@@ -37,6 +41,8 @@ void GuiMediaPreview::setupVideo(){
     selectOffset.y = 320;
     exitOffset.x = 770;
     exitOffset.y = -50;
+    playOffset.x = 650;
+    playOffset.y = 320;
 }
 
 void GuiMediaPreview::setupAudio(){
@@ -85,7 +91,6 @@ void GuiMediaPreview::update(){
         select->setAttr("path", preview->getName());
     } else {
         preview->update();
-
     }
 }
 
@@ -94,11 +99,14 @@ void GuiMediaPreview::draw(){
         preview = MediaCabinet::Instance()->getLastClip();
         preview->startPreview();
     }
-    if(type == "video"){
+    if(type == "video" || type == "image"){
         preview->drawPreview(pos.x - 15 , pos.y + 5, 850, 475);
         //frame.draw(pos.x,pos.y);
         frame.draw(0,0);
         select->draw();
+        if(type == "video"){
+            play->draw();
+        }
         //exit->draw();
     } else if(type == "audio"){
         float pct = preview->getPosition();

@@ -14,7 +14,7 @@ SceneManager::SceneManager(){
     numberRenderer = new GuiNumberRenderer();
     timeRemaining.loadImage("cuts/time_remaining.png");
     timeRemainingArabic.loadImage("cuts/time_remaining_arabic.png");
-    displayArabic = false;
+    displayArabic = true;
     timeRemainingPos.set(120,245);
     timeRemainingPosArabic.set(230,245);
     SubObMediator::Instance()->addObserver("mouse-changed", this);

@@ -49,7 +49,10 @@ public:
     /*New Frame Controls*/
     int getCurrentFrame(){return clip->getCurrentFrame();}
     int getTotalNumFrames(){return clip->getTotalNumFrames();}
+    int getTotalNumSamples(){return clip->getTotalNumSamples();}
     unsigned char* getPixels();
+    float *getSamples(){return clip->getSamples();}
+    float getSample(int _index){return clip->getSample(_index);}
     void setFrame(int _frameNum){clip->setFrame(_frameNum);}
 
     int getStartFrame(){return startFrame;}
@@ -75,11 +78,11 @@ private:
 
 };
 
-class Timeline : public Observer, public Subject{
+class Timeline : public Observer, public Subject, public ofBaseApp{
 
 public:
 
-    Timeline(float _totalTime, string _name);
+    Timeline(float _totalTime, string _name, string _mode);
     void addClip(Clip *_clip);
     void addClip(Clip *_clip, string _id);
     void removeClip(Clip *_clip);
@@ -89,6 +92,7 @@ public:
     void pause();
     void unpause();
     void restart();
+    void rewind();
     void update();
     void update(float);
     void update(string _subName, Subject* _sub);
@@ -112,6 +116,8 @@ public:
     /*New frame functions*/
     int getCurrentFrame();
     void setFrame(int _frame);
+    void setVideoFrame(int _frame);
+    void setAudioFrame(int _frame);
     unsigned char* getPixels();
     int getNumFrames(){return numFrames;}
     void compositeFrames(unsigned char* _one, unsigned char* _two, int _w, int _h, int _bd, bool _blend);
@@ -122,8 +128,12 @@ public:
     void adjustForTransition(bool _on);
     bool isCompositing(){return bCompositing;}
 
+    void audioRequested(float * output, int bufferSize, int nChannels);
+    void updateAudio();
+
 private:
     vector<ClipContainer*> clips;
+    vector<ClipContainer*> activeClips;
     map<float,Clip*> mappedClips;
     ClipContainer *currentClip;
     int clipIndex;
@@ -135,10 +145,17 @@ private:
     map<string,string> attrs;
 
     int numFrames;
+    int currentMaxFrames;
     unsigned char * frameBuffer;
     unsigned char * output;
+    float* sndBuffer;
+    int samplePosition;
+    ofRtAudioSoundStream *stream;
     bool bHaveNewFrame;
     bool bCompositing;
+    int previousFrame;
+
+    string mode;
 };
 
 #endif // TIMELINE_H_INCLUDED

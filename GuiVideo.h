@@ -13,6 +13,9 @@ class GuiVideo : public GuiButton {
         void update(string _subName, Subject* _sub);
     private:
         ofVideoPlayer vid;
+        ofVideoPlayer vidArabic;
+        bool haveArabic;
+        bool displayArabic;
 };
 
 #endif // GUIVIDEO_H

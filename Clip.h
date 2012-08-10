@@ -40,7 +40,10 @@ public:
     virtual int getCurrentFrame(){return -1;}
     virtual int getTotalNumFrames(){return -1;}
     virtual unsigned char* getPixels(){return NULL;}
+    virtual float* getSamples(){return NULL;}
     virtual void setFrame(int _frameNum){}
+    virtual float getSample(int _index){return -1;}
+    virtual int getTotalNumSamples(){return -1;}
 
     /*Transitions*/
 
@@ -68,7 +71,7 @@ protected:
     float stopTime;
     float duration;
     bool bPlayingPreview;
-
+    float framerateAdjust;
 };
 
 class VideoClip : public Clip{
@@ -105,10 +108,18 @@ public:
     int getCurrentFrame();
     int getTotalNumFrames();
     unsigned char* getPixels();
+    unsigned char* getImagePixels();
+    unsigned char* getVideoPixels();
     void setFrame(int _frameNum);
+
+    /*Image */
+    void setupVideo(string _file);
+    void setupImage(string _file);
 
 private:
     ofVideoPlayer video;
+    ofImage img;
+    int currentFrame;
     ofTexture dispTex;
     unsigned char* lastFrame;
     unsigned char* transitionFrame;
@@ -117,7 +128,7 @@ private:
     int vw, vh;
     FadeToBlack* fader;
     Wipe* wiper;
-    float framerateAdjust;
+    string mode;
 };
 
 class ImageClip : public Clip{
@@ -175,6 +186,15 @@ public:
     float* getData();
     float *allData;
     void setEffectStatus(int _effectStatus);
+    float* getSamples();
+    float getSample(int _index);
+
+    /*New Frame Controls*/
+    int getCurrentFrame();
+    int getTotalNumFrames();
+    int getTotalNumSamples();
+    unsigned char* getPixels();
+    void setFrame(int _frameNum);
 
 private:
     //ofSoundPlayer *audio;
@@ -205,6 +225,8 @@ private:
     float pauseVolume;
     bool bPlaying;
     bool bIsDone;
+
+    float *frameSamples;
 };
 
 #endif // CLIP_H_INCLUDED

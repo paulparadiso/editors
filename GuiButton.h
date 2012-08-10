@@ -28,10 +28,13 @@ class GuiButton : public GuiNode, public Subject, public Observer
     private:
         ofImage inactive;
         ofImage active;
+        ofImage arabic;
 		string channel;
 		bool drawActive;
         bool haveActive;
         bool haveImage;
+        bool displayArabic;
+        bool haveArabic;
 };
 
 #endif // GUIBUTTON_H

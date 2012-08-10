@@ -57,6 +57,8 @@ class Compositor : public ofBaseApp, public Subject, public Observer
         void setAttr(string _attr, string _val){attrs[_attr] = _val;}
         string getAttr(const char* _key){return attrs[_key];}
 
+        void updateFrameCount();
+
         /*Record Audio*/
         void startRecording();
         void stopRecording();
@@ -113,6 +115,9 @@ class Compositor : public ofBaseApp, public Subject, public Observer
         int frameNum;
         int currentFrame;
         Timer *timer;
+        bool bSetPause;
+
+        bool bHaveVideoTimeline;
 };
 
 #endif // COMPOSITOR_H

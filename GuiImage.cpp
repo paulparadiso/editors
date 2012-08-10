@@ -4,12 +4,13 @@ GuiImage::GuiImage(map<string,string> &_attrs): GuiNode(){
     img.loadImage(_attrs["image"]);
     attrs = _attrs;
     initialize();
-    map<string,string>::iterator mIter;
-    mIter = attrs.find("arabic");
     haveArabic = false;
     displayArabic = false;
+    map<string,string>::iterator mIter;
+    mIter = attrs.find("arabic");
     if(mIter != attrs.end()){
         haveArabic = true;
+        displayArabic = true;
         imgArabic.loadImage(attrs["arabic"]);
         SubObMediator::Instance()->addObserver("button", this);
     }

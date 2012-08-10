@@ -22,37 +22,62 @@ void Clip::setupTransitions(){
 }
 
 VideoClip::VideoClip(string _file) : Clip(){
-    video.loadMovie(_file);
-    video.setVolume(0.0);
-    video.setPosition(0.0);
+    vector<string>tokens = ofSplitString(_file, ".");
+    if(tokens.size() > 0){
+        if(tokens[1] == "jpg"){
+            cout << "HAVE AN IMAGE CLIP" << endl;
+            mode = "image";
+            setupImage(_file);
+        } else {
+            cout << "HAVE A VIDEO CLIP" << endl;
+            mode = "video";
+            setupVideo(_file);
+        }
+    }
     name = _file;
-    vw = video.getWidth();
-    vh = video.getHeight();
     dispTex.allocate(vw,vh,GL_RGBA);
     cout << "new video " << vw << ", " << vh << " with tex = " << dispTex.getWidth() << ", " << dispTex.getHeight() << endl;
-    duration = video.getDuration();
     type = "video";
     effectStatus = 0;
     effects.push_back(new Rotate(duration));
     effects.push_back(new Wipe(duration));
     effects.push_back(new FadeIn(duration));
     effects.push_back(new FadeIn(duration));
-    fadeOut = new FadeOut(video.getDuration());
     bFadeOut = false;
     //lastFrame = new unsigned char[vw * vh * 3];
     //video.play();
     //video.setPosition(0.99);
     //video.update();
     //memcpy(lastFrame, video.getPixels(), vw * vh * 3);
+    //framerateAdjust = 1.0;
+    setupTransitions();
+    clipData = new unsigned char[854 * 480 * 3];
+    transitionFrame = new unsigned char[854 * 480 * 3];
+    black = new unsigned char[854 * 480 * 3];
+    transitionFrame = black;
+    bPlayingPreview = false;
+}
+
+void VideoClip::setupVideo(string _file){
+    video.loadMovie(_file);
+    video.setVolume(0.0);
+    video.setPosition(0.0);
+    vw = video.getWidth();
+    vh = video.getHeight();
+    duration = video.getDuration();
     float framerate = 1.0 / (video.getDuration() / video.getTotalNumFrames());
     framerateAdjust = framerate / 24.0;
     cout << "framerateAdjust = " << framerateAdjust << " from framerate - " << framerate << endl;
-    //framerateAdjust = 1.0;
-    setupTransitions();
-    clipData = new unsigned char[853 * 480 * 3];
-    transitionFrame = new unsigned char[853 * 480 * 3];
-    black = new unsigned char[853 * 480 * 3];
-    transitionFrame = black;
+    fadeOut = new FadeOut(video.getDuration());
+}
+
+void VideoClip::setupImage(string _file){
+    img.loadImage(_file);
+    vw = img.getWidth();
+    vh = img.getHeight();
+    duration = 5.0;
+    fadeOut = new FadeOut(5.0);
+    framerateAdjust = 1.0;
 }
 
 VideoClip::~VideoClip(){
@@ -62,16 +87,29 @@ VideoClip::~VideoClip(){
 /*New Frame Controls*/
 
 int VideoClip::getCurrentFrame(){
-    return video.getCurrentFrame();
+    //return video.getCurrentFrame();
 }
 
 int VideoClip::getTotalNumFrames(){
-    return video.getTotalNumFrames() / framerateAdjust;
+    if(mode == "video"){
+        return video.getTotalNumFrames() / framerateAdjust;
+    } else {
+        return 5 * 24;
+    }
 }
 
 unsigned char* VideoClip::getPixels(){
     //return video.getPixels();
     //float pct = (float)video.getCurrentFrame() / (float)video.getTotalNumFrames();
+    if(mode == "video"){
+        return getVideoPixels();
+    }
+    if(mode == "image"){
+        return getImagePixels();
+    }
+}
+
+unsigned char* VideoClip::getVideoPixels(){
     float pct = video.getDuration() * video.getPosition();
     if(effectStatus > 0){
         effects[effectStatus - 1]->process(video.getPixels(), clipData, vw, vh, pct);
@@ -91,9 +129,32 @@ unsigned char* VideoClip::getPixels(){
     }
 }
 
+unsigned char* VideoClip::getImagePixels(){
+    float pct = currentFrame / (24 * 5);
+    if(effectStatus > 0){
+        effects[effectStatus - 1]->process(img.getPixels(), clipData, vw, vh, pct);
+        if(bFadeOut){
+            fadeOut->process(clipData, transitionFrame, vw, vh, pct);
+            return transitionFrame;
+        } else {
+            return clipData;
+        }
+    } else {
+        if(bFadeOut){
+            fadeOut->process(img.getPixels(), transitionFrame, vw, vh, pct);
+            return transitionFrame;
+        } else {
+            return img.getPixels();
+        }
+    }
+}
+
 void VideoClip::setFrame(int _frameNum){
     int frameToSet = _frameNum * framerateAdjust;
-    video.setFrame(frameToSet);
+    if(mode == "video"){
+        video.setFrame(frameToSet);
+    }
+    currentFrame = _frameNum;
 }
 
 void VideoClip::setTransitionFrame(unsigned char * _frame){
@@ -105,73 +166,100 @@ void VideoClip::releaseTransitionFrame(){
 }
 
 void VideoClip::play(){
-    startTime = ofGetElapsedTimef();
-    stopTime = startTime + duration;
-    video.play();
-    cout << "playing video from " << startTime << " to " << stopTime << endl;
+    if(mode == "video"){
+        startTime = ofGetElapsedTimef();
+        stopTime = startTime + duration;
+        video.play();
+        cout << "playing video from " << startTime << " to " << stopTime << endl;
+    }
 }
 
 void VideoClip::play(float _startTime){
-    startTime = _startTime;
-    stopTime = startTime + duration;
-    video.play();
-    cout << "playing video from " << startTime << " to " << stopTime << endl;
+    if(mode == "video"){
+        startTime = _startTime;
+        stopTime = startTime + duration;
+        video.play();
+        cout << "playing video from " << startTime << " to " << stopTime << endl;
+    }
 }
 
 void VideoClip::pause(){
-    video.setPaused(true);
+    if(mode == "video"){
+        video.setPaused(true);
+    }
 }
 
 void VideoClip::unpause(){
-    video.setPaused(false);
+    if(mode == "video"){
+        video.setPaused(false);
+    }
 }
 
 void VideoClip::stop(){
-    video.stop();
+    if(mode == "video"){
+        video.stop();
+    }
 }
 
 void VideoClip::reset(){
-    video.setPosition(0.0);
-    video.stop();
+    if(mode == "video"){
+        video.setPosition(0.0);
+        video.stop();
+    }
 }
 
 bool VideoClip::isDone(){
+    /*
     if(video.getTotalNumFrames() - video.getCurrentFrame() < 1){
         return true;
     }
+    */
     return false;
 }
 
 float VideoClip::getTimeRemaining(){
-    return video.getDuration() - video.getPosition() * video.getDuration();
+    if(mode == "video"){
+        return video.getDuration() - video.getPosition() * video.getDuration();
+    } else {
+        return 0.0;
+    }
 }
 
 void VideoClip::startPreview(){
     bPlayingPreview = true;
-    play();
-    video.setLoopState(OF_LOOP_NORMAL);
+    if(mode == "video"){
+        play();
+        video.setPosition(0.0);
+        video.setLoopState(OF_LOOP_NONE);
+    }
 }
 
 void VideoClip::stopPreview(){
     bPlayingPreview = false;
-    video.setLoopState(OF_LOOP_NONE);
-    pause();
-    video.setPosition(0.0);
+    if(mode == "video"){
+        video.setLoopState(OF_LOOP_NONE);
+        pause();
+        video.setPosition(0.0);
+    }
 }
 
 unsigned char* VideoClip::getNextFrame(){
+    /*
     //cout << "return next frame - " << video.getCurrentFrame() << endl;
     video.play();
     video.update();
     clipData = video.getPixels();
-    //memset(clipData,ofRandom(0,255),853 * 480 * 3);
+    //memset(clipData,ofRandom(0,255),854 * 480 * 3);
     video.nextFrame();
     video.stop();
     return clipData;
+    */
 }
 
 void VideoClip::update(){
-    video.update();
+    if(mode == "video"){
+        video.update();
+    }
     /*
     if(video.isFrameNew()){
         clipData = video.getPixels();
@@ -231,7 +319,12 @@ void VideoClip::drawPreview(int _x, int _y, int _sx, int _sy){
     //if(video.isPlaying()){
     //dispTex.draw(_x,_y,_sx,_sy);
     //}
-    dispTex.draw(_x,_y,_sx,_sy);
+    if(mode == "video"){
+        video.draw(_x,_y,_sx,_sy);
+    }
+    if(mode == "image"){
+        img.draw(_x,_y,_sx,_sy);
+    }
 }
 
 void VideoClip::setStartTime(float _startTime){
@@ -240,10 +333,12 @@ void VideoClip::setStartTime(float _startTime){
 }
 
 void VideoClip::setPosition(float _pct){
-    video.play();
-    video.setPosition(_pct);
-    update();
-    video.stop();
+    if(mode == "video"){
+        video.play();
+        video.setPosition(_pct);
+        update();
+        video.stop();
+    }
 }
 
 ImageClip::ImageClip(string _file) : Clip(){
@@ -284,8 +379,8 @@ AudioClip::AudioClip(string _file, float _dur) : Clip(){
     sndBuf = new float[numSamples];
     int numRead = sf_read_float(sndFile, sndBuf, numSamples);
     samplePosition = 0;
-    echoPhase = 44100/4;
-    echoDamp = 0.85;
+    echoPhase = 44100/6;
+    echoDamp = 0.95;
     numProcessedSamples = numSamples;
     //processedBuffer = new float[numProcessedSamples];
     processedBuffer = new float[numProcessedSamples];
@@ -299,10 +394,14 @@ AudioClip::AudioClip(string _file, float _dur) : Clip(){
     stream->setup(this,sndInfo.channels,0,sndInfo.samplerate,256, 32);
     cout << "opened file " << _file << " has " << numSamples << " samples." << endl;
     effectStatus = 0;
+    framerateAdjust = 44100 / 24.0;
+    frameSamples = new float[(int)framerateAdjust];
+    cout << "framerateAdjust = " << framerateAdjust << " from audio framerate 44100" << endl;
+    samplePosition = 0;
 }
 
 void AudioClip::setEffectStatus(int _effectStatus){
-    //cout << "audio clip setting effect." << endl;
+    cout << "audio clip setting effect." << endl;
     effectStatus = _effectStatus;
     switch(effectStatus){
         case AUDIO_EFFECT_NONE:
@@ -343,6 +442,43 @@ void AudioClip::setEffectStatus(int _effectStatus){
             break;
         default:
             break;
+    }
+}
+
+int AudioClip::getTotalNumFrames(){
+    //return numSamples;
+    return numSamples / framerateAdjust;
+}
+
+int AudioClip::getTotalNumSamples(){
+    return numSamples;
+}
+
+int AudioClip::getCurrentFrame(){
+    return samplePosition / framerateAdjust;
+}
+
+unsigned char* AudioClip::getPixels(){
+}
+
+void AudioClip::setFrame(int _frame){
+    samplePosition = _frame * framerateAdjust;
+    //memcpy(frameSamples, &sndBuf[samplePosition], 44100 / 24);
+}
+
+float* AudioClip::getSamples(){
+    memcpy(frameSamples, &sndBuf[samplePosition], 44100 / 24);
+    samplePosition += 44100 / 24;
+    //samplePosition += framerateAdjust;
+    //cout << "return samples" << endl;
+    return frameSamples;
+}
+
+float AudioClip::getSample(int _index){
+    if(_index < numSamples){
+        return processedBuffer[_index];
+    } else {
+        return 0.0;
     }
 }
 

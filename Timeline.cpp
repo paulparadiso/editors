@@ -11,6 +11,7 @@ ClipContainer::ClipContainer(Clip* _clip){
 void ClipContainer::setStartFrame(int _startFrame){
     startFrame = _startFrame;
     stopFrame = startFrame + clip->getTotalNumFrames();
+    cout << "startFrame = " << startFrame << " and stopFrame = " << stopFrame << endl;
 }
 
 void ClipContainer::adjustStartFrame(int _amt){
@@ -33,6 +34,8 @@ void ClipContainer::update(string _subName, Subject* _sub){
         int oldEffect = effectStatus;
         if(clipID == id){
             effectStatus = ofToInt(fx);
+            clip->setEffectStatus(effectStatus);
+            /*
             if(effectStatus == 2 || effectStatus == 4){
                 cout << "turning on transition effect.";
                 bHaveTransition = true;
@@ -48,6 +51,7 @@ void ClipContainer::update(string _subName, Subject* _sub){
                 bHaveTransition = true;
                 SubObMediator::Instance()->update("transition-effect-off", this);
             }
+            */
         }
     }
 }
@@ -61,9 +65,10 @@ bool ClipContainer::hasTransition(){
     }
 }
 
-Timeline::Timeline(float _totalTime, string _name){
+Timeline::Timeline(float _totalTime, string _name, string _mode){
     totalTime = _totalTime; //Most likely 60.0
     timeRemaining = totalTime;
+    mode = _mode;
     runningTime = 0.0;
     isPlaying = false;
     clipIndex = 0;
@@ -74,12 +79,23 @@ Timeline::Timeline(float _totalTime, string _name){
     SubObMediator::Instance()->addObserver("timeline-clip-removed", this);
     SubObMediator::Instance()->addObserver("transition-effect-on", this);
     SubObMediator::Instance()->addObserver("transition-effect-off", this);
-    frameBuffer = new unsigned char[853 * 480 * 3];
-    output = new unsigned char[853 * 480 * 3];
-    memset(frameBuffer, 0, 853 * 480 *3);
-    bHaveNewFrame = true;
+    frameBuffer = new unsigned char[854 * 480 * 3];
+    output = new unsigned char[854 * 480 * 3];
+    memset(frameBuffer, 0, 854 * 480 *3);
+    if(mode == "video"){
+        bHaveNewFrame = true;
+    } else {
+        bHaveNewFrame = false;
+    }
     attrs["name"] = _name;
     bCompositing = false;
+    if(mode == "audio"){
+        stream = new ofRtAudioSoundStream;
+        stream->setup(this,1,0,44100,256, 32);
+        sndBuffer = new float[44100 / 24];
+    }
+    previousFrame = 0;
+    samplePosition = 0;
 }
 
 unsigned char * Timeline::getPixels(){
@@ -89,45 +105,29 @@ unsigned char * Timeline::getPixels(){
 
 void Timeline::addClip(Clip *_clip){
     cout << "adding a clip of type - " << _clip->getType() << endl;
-    /*
-    float lastStopTime = 0.0;
-    if(!clips.empty()){
-        lastStopTime = clips.back()->getStopTime();
-    }
-    */
-    /*
-    if(_clip->getType() == "video"){
-        _clip->addEffect("wipe");
-    }
-    */
     clips.push_back(new ClipContainer(_clip));
-    //MediaCabinet::Instance()->increaseClipHold(_clip);
     clips.back()->setStartFrame(numFrames);
     numFrames += clips.back()->getTotalNumFrames();
-    //clips.back()->setStartTime(lastStopTime);
-    /*  Commented out to test initialization on start.
-    if(!currentClip){
-        currentClip = clips[0];
+}
+
+void Timeline::audioRequested(float * output, int bufferSize, int nChannels){
+    //cout << "audio requested" << endl;
+    for(int i = 0; i < bufferSize; i++){
+        //if(bHaveNewFrame){
+        if(isPlaying && activeClips.size() > 0){
+            output[i] = (*activeClips.begin())->getSample(samplePosition++);
+            if(samplePosition > currentMaxFrames){
+                samplePosition = 0;
+                //updateAudio();
+                bHaveNewFrame = false;
+            }
+        } else {
+            output[i] = 0.0;
+        }
     }
-    */
-    //totalTime += clips.back()->getDuration();
 }
 
 void Timeline::addClip(Clip* _clip, string _id){
-    /*
-    if(clips.size() > 0){
-        unsigned char * holder = clips.back()->getLastFrame();
-        addClip(_clip);
-        MediaCabinet::Instance()->increaseClipHold(_clip);
-        clips.back()->setID(_id);
-        clips.back()->setTransitionFrame(holder);
-    } else {
-        addClip(_clip);
-        MediaCabinet::Instance()->increaseClipHold(_clip);
-        clips.back()->setID(_id);
-    }
-    //timeRemaining -= clips.back()->getDuration;
-    */
     clips.push_back(new ClipContainer(_clip));
     clips.back()->setStartFrame(numFrames);
     clips.back()->setID(_id);
@@ -212,10 +212,19 @@ void Timeline::adjustForTransition(bool _on){
 }
 
 void Timeline::setFrame(int _frame){
+    if(mode == "video"){
+        setVideoFrame(_frame);
+    }
+    if(mode == "audio"){
+        setAudioFrame(_frame);
+    }
+}
+
+void Timeline::setVideoFrame(int _frame){
     //cout << "timeline setting frame to - " << _frame << endl;
     bool bNewFrame = false;
     vector<ClipContainer*>::iterator cIter;
-    vector<ClipContainer*> activeClips;
+    activeClips.clear();
     for(cIter = clips.begin(); cIter != clips.end(); ++cIter){
         int clipStartFrame = (*cIter)->getStartFrame();
         int clipStopFrame = (*cIter)->getStopFrame();
@@ -231,14 +240,65 @@ void Timeline::setFrame(int _frame){
     }
     if(bNewFrame){
         if(activeClips.size() > 0){
-            memcpy(frameBuffer, (*activeClips.begin())->getPixels(), 853 * 480 * 3);
+            memcpy(frameBuffer, (*activeClips.begin())->getPixels(), 854 * 480 * 3);
             for(cIter = activeClips.begin() + 1; cIter != activeClips.end(); ++cIter){
-                compositeFrames(frameBuffer, (*cIter)->getPixels(), 853, 480, 3, (*cIter)->hasCrossfade());
+                compositeFrames(frameBuffer, (*cIter)->getPixels(), 854, 480, 3, (*cIter)->hasCrossfade());
             }
-            memcpy(output, frameBuffer, 853 * 480 * 3);
+            memcpy(output, frameBuffer, 854 * 480 * 3);
             bHaveNewFrame = true;
         }
     }
+}
+
+void Timeline::setAudioFrame(int _frame){
+    //cout << "audio requested" << endl;
+    bool bNewFrame = false;
+    //if(_frame != previousFrame + 1 || _frame == 0){
+        vector<ClipContainer*>::iterator cIter;
+        activeClips.clear();
+        for(cIter = clips.begin(); cIter != clips.end(); ++cIter){
+            int clipStartFrame = (*cIter)->getStartFrame();
+            int clipStopFrame = (*cIter)->getStopFrame();
+            //cout << "startFrame = " << clipStartFrame << ", clipStopFrame = " << clipStopFrame << endl;
+            if((clipStartFrame < _frame) && (_frame < clipStopFrame)){
+                int frameToSet = (_frame - clipStartFrame) * (44100 / 24);
+                //(*cIter)->setFrame(frameToSet);
+                //(*cIter)->update();
+                currentMaxFrames = (*cIter)->getTotalNumSamples();
+                activeClips.push_back((*cIter));
+                if(_frame != previousFrame + 1 || _frame == 0){
+                    samplePosition = frameToSet;
+                }
+                if(abs(frameToSet - samplePosition) > 10000){
+                    samplePosition = frameToSet;
+                }
+                bNewFrame = true;
+            }
+        }
+    //}
+    if(bNewFrame){
+        updateAudio();
+        /*
+        if(activeClips.size() > 0){
+            memcpy(sndBuffer, (*activeClips.begin())->getSamples(), 44100 / 24 * sizeof(float));
+            /*
+            for(cIter = activeClips.begin() + 1; cIter != activeClips.end(); ++cIter){
+                compositeFrames(frameBuffer, (*cIter)->getPixels(), 854, 480, 3, (*cIter)->hasCrossfade());
+            }
+            */
+            //memcpy(output, frameBuffer, 854 * 480 * 3);
+            /*
+            bHaveNewFrame = true;
+            samplePosition = 0;
+        }
+        */
+    }
+    previousFrame = _frame;
+}
+
+void Timeline::updateAudio(){
+    //memcpy(sndBuffer, (*activeClips.begin())->getSamples(), 44100 / 24 * sizeof(float));
+    bHaveNewFrame = true;
 }
 
 void Timeline::compositeFrames(unsigned char* _one, unsigned char* _two, int _w, int _h, int _bd, bool _blend){
@@ -279,6 +339,7 @@ void Timeline::removeClip(string _id){
         cout << "checking id against " << tmpID << endl;
         if(tmpID == _id){
             //(*cIter)->stop();
+            activeClips.clear();
             cout << "timeline removing clip" << endl;
                 //MediaCabinet::Instance()->removeClip((*cIter));
             int tmpFrameCnt = numFrames;
@@ -350,7 +411,9 @@ void Timeline::setEffectStatus(string _name, int _effectStatus){
 }
 
 void Timeline::start(){
-    if(/*currentClip*/ clips.size() > 0){
+    isPlaying = true;
+    /*
+    if( clips.size() > 0){
         startTime = ofGetElapsedTimef();
         isPlaying = true;
         clipIndex = 0;
@@ -358,6 +421,7 @@ void Timeline::start(){
         cout << "timeline starting" << endl;
         currentClip->play(0.0);
     }
+    */
 }
 
 void Timeline::stop(){
@@ -365,9 +429,17 @@ void Timeline::stop(){
 }
 
 void Timeline::pause(){
+    isPlaying = false;
+    /*
     if(currentClip){
         currentClip->pause();
     }
+    */
+}
+
+void Timeline::rewind(){
+    isPlaying = true;
+    setFrame(0);
 }
 
 void Timeline::unpause(){
@@ -403,83 +475,10 @@ string Timeline::getType(){
 }
 
 void Timeline::update(){
-    //cout << "running time = " << runningTime << endl;
-    /*
-    if(isPlaying){
-        runningTime = ofGetElapsedTimef() - startTime;
-        if(runningTime > totalTime){
-            startTime = ofGetElapsedTimef();
-            this->update();
-        }
-        vector<Clip*>::iterator cIter;
-        for(cIter = clips.begin(); cIter != clips.end(); cIter++){
-            (*cIter)->update(runningTime);
-        }
-    }
-    */
-    if(currentClip){
-        //currentClip->update(runningTime);
-        currentClip->update();
-        /*
-        if(currentClip->isDone()){
-            currentClip->stop();
-            clipIndex = clipIndex + 1 % clips.size();
-            currentClip = clips[clipIndex];
-            currentClip->play();
-            //currentClip->play();
-        }
-        */
-        if(currentClip->getStopTime() < ofGetElapsedTimef()){
-            cout << "current clip done, advancing." << endl;
-            currentClip->stop();
-            if(clipIndex <= clips.size() - 1){
-                cout << "increasing currentClip." << endl;
-                clipIndex++;
-                currentClip = clips[clipIndex];
-                currentClip->play();
-            } else {
-                currentClip = NULL;
-                cout << "end of timeline.  blacking out compositor" << endl;
-                Compositor::Instance()->blackOut();
-            }
-        }
-    }
+
 }
 
 void Timeline::update(float _runningTime){
-    if(currentClip){
-        currentClip->update();
-        //cout << "time remaining on clip = " << currentClip->getTimeRemaining() << endl;
-        if(!isTransitioning){
-            /*
-            if(currentClip->getTimeRemaining() < 0.5){
-                if(clipIndex < clips.size() - 1){
-                    cout << "turning on transition" << endl;
-                    isTransitioning = true;
-                    clips[clipIndex + 1]->play();
-                }
-            }
-            */
-        } else {
-            //clips[clipIndex + 1]->update();
-        }
-        /*if(currentClip->getStopTime() < _runningTime){*/
-        if(currentClip->isDone()){
-            cout << "current clip done, advancing." << endl;
-            currentClip->stop();
-            if(clipIndex < clips.size() - 1){
-                clipIndex++;
-                currentClip = clips[clipIndex];
-                if(!isTransitioning){
-                    currentClip->play(_runningTime);
-                }
-                isTransitioning = false;
-            } else {
-                currentClip = NULL;
-                Compositor::Instance()->blackOut();
-            }
-        }
-    }
 }
 
 void Timeline::updateRun(){

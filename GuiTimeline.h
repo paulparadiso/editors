@@ -12,7 +12,7 @@
 class GuiTimelineButton : public GuiButton
 {
     public:
-        GuiTimelineButton(float _length);
+        GuiTimelineButton(float _length, string _type);
         virtual ~GuiTimelineButton(){}
         void draw();
         void drawLoosie();
@@ -46,6 +46,7 @@ class GuiTimelineButton : public GuiButton
         ofImage img;
         bool bLoosie;
         bool bAwaitingResponse;
+        string type;
 };
 
 class GuiTimeline : public GuiNode, public Observer, public Subject {

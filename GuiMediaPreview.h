@@ -8,7 +8,7 @@
 #include "MediaCabinet.h"
 
 class GuiMediaPreview : public GuiNode{
-	
+
 public:
     GuiMediaPreview(map<string,string> &_attrs);
     //void initialize(map<string, string> &_attrs);
@@ -23,7 +23,7 @@ public:
     void setSelectTarget(string _target);
     void setPosition(ofVec2f _pos);
     void setSelectMessage(map<string,string> _msg){select->setMessage(_msg);}
-	
+
 private:
     string media;
     ofImage frame;
@@ -35,7 +35,6 @@ private:
     GuiButton *exit;
     GuiButton *select;
     GuiButton *play;
-	
 };
 
 #endif
