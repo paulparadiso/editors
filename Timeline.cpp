@@ -11,7 +11,6 @@ ClipContainer::ClipContainer(Clip* _clip){
 void ClipContainer::setStartFrame(int _startFrame){
     startFrame = _startFrame;
     stopFrame = startFrame + clip->getTotalNumFrames();
-    cout << "startFrame = " << startFrame << " and stopFrame = " << stopFrame << endl;
 }
 
 void ClipContainer::adjustStartFrame(int _amt){
@@ -56,15 +55,6 @@ void ClipContainer::update(string _subName, Subject* _sub){
     }
 }
 
-bool ClipContainer::hasTransition(){
-    if(bHaveTransition){
-        bHaveTransition = false;
-        return true;
-    } else {
-        return false;
-    }
-}
-
 Timeline::Timeline(float _totalTime, string _name, string _mode){
     totalTime = _totalTime; //Most likely 60.0
     timeRemaining = totalTime;
@@ -106,8 +96,8 @@ unsigned char * Timeline::getPixels(){
 void Timeline::addClip(Clip *_clip){
     cout << "adding a clip of type - " << _clip->getType() << endl;
     clips.push_back(new ClipContainer(_clip));
-    clips.back()->setStartFrame(numFrames);
-    numFrames += clips.back()->getTotalNumFrames();
+    //clips.back()->setStartFrame(numFrames);
+    //numFrames += clips.back()->getTotalNumFrames();
 }
 
 void Timeline::audioRequested(float * output, int bufferSize, int nChannels){
@@ -159,6 +149,31 @@ void Timeline::removeClip(Clip *_clip){
     }
 }
 
+void Timeline::setStartFrames(){
+    int sFrame = 0;
+    int tFrames = 0;
+    vector<ClipContainer*>::iterator cIter;
+    vector<ClipContainer*>::iterator prevIter;
+    for(cIter = clips.begin(); cIter != clips.end(); ++cIter){
+        if((*cIter)->needsNudge() && cIter != clips.begin()){
+            sFrame -= 24;
+        }
+        if(cIter != clips.begin()){
+            prevIter = cIter;
+            prevIter--;
+            if((*cIter)->hasTransition()){
+                (*prevIter)->setFadeOut(true);
+            } else {
+                (*prevIter)->setFadeOut(false);
+            }
+        }
+        (*cIter)->setStartFrame(sFrame);
+        sFrame = (*cIter)->getStopFrame();
+        tFrames += (*cIter)->getTotalNumFrames();
+    }
+    numFrames = sFrame;
+}
+
 void Timeline::adjustStartFrames(int _amt){
     vector<ClipContainer*>::iterator cIter;
     for(cIter = clips.begin(); cIter != clips.end(); ++cIter){
@@ -173,15 +188,10 @@ void Timeline::update(string _subName, Subject* _sub){
         removeClip(_sub->getAttr("clip-to-remove"));
         SubObMediator::Instance()->update("update-timeline-framecount",this);
     }
-    if(_subName == "transition-effect-on"){
-        adjustForTransition(true);
-    }
-    if(_subName == "transition-effect-off"){
-        adjustForTransition(false);
-    }
 }
 
 void Timeline::adjustForTransition(bool _on){
+    /*
     int framesToAdjust = 0;
     vector<ClipContainer*>::iterator cIter;
     for(cIter = clips.begin(); cIter != clips.end(); ++cIter){
@@ -209,6 +219,7 @@ void Timeline::adjustForTransition(bool _on){
         }
     }
     numFrames += framesToAdjust;
+    */
 }
 
 void Timeline::setFrame(int _frame){
@@ -455,8 +466,10 @@ void Timeline::restart(){
 
 void Timeline::reset(){
     vector<ClipContainer*>::iterator cIter;
-    for(cIter = clips.begin(); cIter != clips.end(); ++cIter){
-        (*cIter)->reset();
+    for(cIter = clips.begin(); cIter != clips.end();){
+        //(*cIter)->reset();
+        delete (*cIter);
+        cIter = clips.erase(cIter);
     }
     currentClip = NULL;
 }
@@ -475,7 +488,9 @@ string Timeline::getType(){
 }
 
 void Timeline::update(){
-
+    if(mode == "video"){
+        setStartFrames();
+    }
 }
 
 void Timeline::update(float _runningTime){

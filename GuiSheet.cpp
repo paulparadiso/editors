@@ -1,4 +1,5 @@
 #include "GuiSheet.h"
+#include "GuiConfigurator.h"
 
 GuiSheet::GuiSheet(){
     haveLoosie = false;
@@ -146,10 +147,9 @@ void GuiSheet::draw(){
 		(*nIter)->draw();
 	}
     if(haveLoosie){
-        //GuiConfigurator::Instance()->getLoosie()->drawLoosie();
+        GuiConfigurator::Instance()->getLoosie()->drawLoosie();
     }
-    /*
-    if(attrs["name"] == "audio-recorder"){
+    if(name == "audio-recorder"){
         ofImage ball;
         ball.loadImage("cuts/ball_clipped.png");
         float pct = Compositor::Instance()->getRecordingPosition();
@@ -158,6 +158,5 @@ void GuiSheet::draw(){
         ofRect(711 + xDiff, 566,maxX - xDiff ,31);
         ball.draw(720 + xDiff - (ball.getWidth() / 2),561);
     }
-    */
 }
 

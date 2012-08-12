@@ -34,6 +34,8 @@ GuiButton::GuiButton(map<string, string> &_attrs) : GuiNode(){
 
 GuiButton::GuiButton(string _img) : GuiNode(){
     inactive.loadImage(_img);
+    haveArabic = false;
+    displayArabic = false;
     size.x = inactive.getWidth();
     size.y = inactive.getHeight();
     haveImage = true;

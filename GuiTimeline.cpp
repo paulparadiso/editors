@@ -7,6 +7,7 @@ GuiTimelineButton::GuiTimelineButton(float _length, string _type) : GuiButton(){
     colors["effect_2"] = new ofColor(190, 30, 45);
     colors["effect_3"] = new ofColor(28, 100, 10);
     colors["effect_4"] = new ofColor(141, 198, 63);
+    colors["effect_5"] = new ofColor(141, 198, 63);
     activeEffect = "none";
     curveRadius = 14;
     type = _type;
@@ -166,6 +167,7 @@ GuiTimeline::GuiTimeline(map<string,string> &_attrs): GuiNode(){
     //timeline = Compositor::Instance()->getTimeline(attrs["name"]);
     SubObMediator::Instance()->addObserver("new-timeline-clip", this);
     SubObMediator::Instance()->addObserver("button", this);
+    SubObMediator::Instance()->addObserver("reset", this);
 }
 
 void GuiTimeline::message(map<string,string> _msg){
@@ -190,6 +192,14 @@ void GuiTimeline::update(string _subName, Subject* _sub){
                 //cout << "timeline asked to find and delete clip." << endl;
                 findAndDeleteItem();
             }
+        }
+    }
+    if(_subName == "reset"){
+        cout << "GuiTimeline resetting" << endl;
+        list<GuiTimelineButton*>::iterator iIter;
+        for(iIter = images.begin(); iIter != images.end();){
+            delete (*iIter);
+            iIter = images.erase(iIter);
         }
     }
 }
@@ -324,7 +334,7 @@ bool GuiTimeline::processMouse(int _x, int _y, int _state){
             if((*iIter)->isInside(_x, _y)){
                 cout << "OPENING EFFECTS MENU" << endl;
                 //GuiConfigurator::Instance()->setGlobal("active-timeline", name);
-                //GuiConfigurator::Instance()->addLoosie((*iIter));
+                GuiConfigurator::Instance()->addLoosie((*iIter));
                 (*iIter)->execute();
                 (*iIter)->setAwaitingResponse(true);
                 return true;

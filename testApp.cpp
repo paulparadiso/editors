@@ -6,6 +6,7 @@ void testApp::setup(){
     ofEnableAlphaBlending();
     ofEnableSmoothing();
     string file = "sheets.xml";
+    Compositor::Instance()->update();
     GuiConfigurator::Instance()->addFile(file);
     //gCr = new GuiCreator();
     GuiConfigurator::Instance()->getTags();

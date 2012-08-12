@@ -29,7 +29,7 @@ void Pager::setPositions(){
     if(lastItem > items.size()){
         lastItem = items.size();
     }
-    cout << "Pager items = " << firstItem << ", " << lastItem << endl;
+    //cout << "Pager items = " << firstItem << ", " << lastItem << endl;
     /*
     for(vector<PagerItem*>::size_type i  = firstItem; i < lastItem; i++){
         int x = i % (int)pageDims.x;
@@ -108,7 +108,11 @@ void Pager::draw(){
     }
     */
     for(int i = 0; i < items.size(); i++){
-        items[i]->draw();
+        if(bReloader){
+            items[i]->drawFramed();
+        } else {
+            items[i]->draw();
+        }
     }
     SceneManager::Instance()->drawTimeRemaining(activeTimeline);
     //exit->draw();
@@ -116,7 +120,7 @@ void Pager::draw(){
 }
 
 void Pager::message(map<string,string> _msg){
-    cout << "user-pager recieved message" << endl;
+    //cout << "user-pager recieved message" << endl;
     if(_msg["action"] == "reload"){
         reload();
     }
@@ -149,21 +153,39 @@ bool PagerItem::processMouse(int _x, int _y, int _state){
 void PagerItem::update(string _subName, Subject *_sub){
     if(_subName == "time-remaining"){
         string target = _sub->getAttr("name");
-        //cout << "PagerItem " << attrs["target"] << " got updated time remaining for " << target << endl;
+        cout << "PagerItem " << attrs["target"] << " got updated time remaining for " << target << endl;
         if(target == attrs["target"]){
             timeRemainingOnTrack = ofToInt(_sub->getAttr("time"));
+        }
+    }
+    if(_subName == "button"){
+        string target = _sub->getAttr("target");
+        string action = _sub->getAttr("action");
+        if(target == "language" && action == "switch"){
+            if(haveArabic){
+                displayArabic = !displayArabic;
+            }
+        }
+        string targetType = _sub->getAttr("target-type");
+        if(targetType == "timeline"){
+            attrs.erase("target");
+            attrs["target"] = _sub->getAttr("name");
+            cout << "set activeTimeline to " << attrs["target"] << endl;
         }
     }
 }
 
 VideoPager::VideoPager(map<string, string> & _attrs) : Pager(_attrs){
     dir = _attrs["directory"];
+    if(dir == "audio/user"){
+        bReloader = true;
+    } else {
+        bReloader = false;
+    }
     activeTimeline = _attrs["target"];
-    cout << "set activeTimeline to " << _attrs["target"] << endl;
     lister.allowExt("xml");
     lister.listDir(dir);
     string folder = dir + "/";
-    cout << dir << " has " << lister.size() << " items." << endl;
     for(int i = 0; i < lister.size(); i++){
         //xml.loadFile(lister.getPath(i));
         //string type = xml.getValue("type","none");
@@ -177,7 +199,6 @@ VideoPager::VideoPager(map<string, string> & _attrs) : Pager(_attrs){
         if(tmpItemPtr->getItemType() == "audio"){
             int index = ofToInt(tmpItemPtr->getItemIndex());
             //items[index] = tmpItemPtr;
-            cout << "adding item to " << index << endl;
             items[index] = tmpItemPtr;
         } else {
             //items.push_back(tmpItemPtr);
@@ -185,10 +206,12 @@ VideoPager::VideoPager(map<string, string> & _attrs) : Pager(_attrs){
         }
     }
     setPositions();
+    SubObMediator::Instance()->addObserver("audio-recording-complete", this);
+    SubObMediator::Instance()->addObserver("button", this);
 }
 
 void VideoPager::reload(){
-    cout << "user-pager reloading" << endl;
+    //cout << "user-pager reloading" << endl;
     items.clear();
     lister.allowExt("xml");
     lister.listDir(dir);
@@ -200,6 +223,21 @@ void VideoPager::reload(){
         items[i] = new VideoItem(lister.getPath(i));
     }
     setPositions();
+}
+
+void VideoPager::update(string _subName, Subject *_sub){
+    if(_subName == "audio-recording-complete"){
+        if(bReloader){
+            reload();
+        }
+    }
+    if(_subName == "button"){
+        string targetType = _sub->getAttr("target-type");
+        if(targetType == "timeline"){
+            activeTimeline = _sub->getAttr("name");
+            //cout << "set activeTimeline to " << activeTimeline << endl;
+        }
+    }
 }
 
 VideoItem::VideoItem(string _path){
@@ -218,7 +256,7 @@ VideoItem::VideoItem(string _path){
         setupImage();
     else if(attrs["type"] == "audio"){
         //setAttr("index",loader.getValue("position"));
-        cout << "setting itemType to audio" << endl;
+        //cout << "setting itemType to audio" << endl;
         itemType = "audio";
         itemIndex = loader.getValue("position");
         setupAudio();
@@ -276,6 +314,7 @@ void VideoItem::setupImage(){
 void VideoItem::setupAudio(){
     mediaPreview = new GuiMediaPreview(attrs);
     mediaPreview->setPosition(ofVec2f(-80,-80));
+    SubObMediator::Instance()->addObserver("button", this);
     msg["action"] = "add";
     msg["path"] = attrs["path"];
     msg["type"] = attrs["type"];
@@ -292,7 +331,10 @@ void VideoItem::setupAudio(){
     previewSheet = new GuiSheet();
     previewSheet->addNode(mediaPreview);
     GuiConfigurator::Instance()->addSheet(attrs["path"],previewSheet);
-    frame.loadImage("cuts/audio_frame.png");
+    frame.loadImage("cuts/my_audio_frame.png");
+    arabicFrame.loadImage("cuts/my_audio_frame_arabic.png");
+    haveArabic = true;
+    displayArabic = true;
     size.x = frame.getWidth();
     size.y = frame.getHeight();
 }
@@ -327,10 +369,12 @@ void VideoItem::executeAudio(){
     button->setMessage(msg);
     button->execute();
     */
-    msg["target"] = GuiConfigurator::Instance()->getGlobal("timeline-target");
-    mediaPreview->setSelectMessage(msg);
-    MediaCabinet::Instance()->addClip(attrs["path"],attrs["path"]);
-    GuiConfigurator::Instance()->openSheet(attrs["path"]);
+    //msg["target"] = GuiConfigurator::Instance()->getGlobal("timeline-target");
+    //mediaPreview->setSelectMessage(msg);
+    if(durationInt < timeRemainingOnTrack){
+        MediaCabinet::Instance()->addClip(attrs["path"],attrs["path"]);
+        GuiConfigurator::Instance()->openSheet(attrs["path"]);
+    }
 }
 
 void VideoItem::draw(){
@@ -342,6 +386,16 @@ void VideoItem::draw(){
         drawAudio();
     //preview.draw(basePos.x, basePos.y, 215, 121);
 
+}
+
+void VideoItem::drawFramed(){
+    pos = (basePos * ofVec2f(size.x,size.y)) + pagerPadding + (itemPadding * basePos);
+    if(displayArabic){
+        arabicFrame.draw(pos.x,pos.y);
+    } else {
+        frame.draw(pos.x,pos.y);
+    }
+    SceneManager::Instance()->drawNumber(durationInt, pos.x + 193, pos.y + 105, 41, 25,0);
 }
 
 void VideoItem::drawVideo(){
@@ -364,8 +418,9 @@ void VideoItem::drawImage(){
 
 void VideoItem::drawAudio(){
     pos = (basePos * ofVec2f(size.x,size.y)) + pagerPadding + (itemPadding * basePos);
-    frame.draw(pos.x,pos.y);
-    texter.drawString(":" + drawDuration, pos.x + 193, pos.y + 125);
+    //frame.draw(pos.x,pos.y);
+    //texter.drawString(":" + drawDuration, pos.x + 193, pos.y + 125);
+    SceneManager::Instance()->drawNumber(durationInt, pos.x + 193, pos.y + 105, 41, 25,0);
 }
 
 /*
@@ -375,7 +430,7 @@ void VideoItem::drawAudio(){
 */
 
 ofTexture getVideoPreview(string _path, float _pos){
-    cout << "getting preview for video - " << _path << endl;
+    //cout << "getting preview for video - " << _path << endl;
     ofVideoPlayer player;
     ofTexture preview;
     player.loadMovie(_path);

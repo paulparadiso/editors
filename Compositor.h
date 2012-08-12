@@ -72,6 +72,7 @@ class Compositor : public ofBaseApp, public Subject, public Observer
 
     private:
         Compositor();
+        void vRender();
         string makeDateName();
         map<string, string>attrs;
         unsigned char* black;

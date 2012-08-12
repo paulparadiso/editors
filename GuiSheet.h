@@ -3,6 +3,7 @@
 
 #include "GuiNode.h"
 #include "Subject.h"
+#include "Compositor.h"
 
 class GuiSheet : public Subject{
 

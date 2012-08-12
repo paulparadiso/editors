@@ -60,9 +60,11 @@ public:
     void setStartFrame(int _startFrame);
     void adjustStartFrame(int _amt);
 
-    bool hasCrossfade(){return bCrossfade;}
+    bool hasCrossfade(){return clip->hasCrossfade();}
     void setTransitionOut(bool _fade){clip->setFadeOut(_fade);}
-    bool hasTransition();
+    bool hasTransition(){return clip->hasTransition();}
+    bool needsNudge(){return clip->needsNudge();}
+    void setFadeOut(bool _fade){clip->setFadeOut(_fade);}
 
 private:
     /*Effects*/
@@ -123,6 +125,7 @@ public:
     void compositeFrames(unsigned char* _one, unsigned char* _two, int _w, int _h, int _bd, bool _blend);
     bool hasNewFrame(){return bHaveNewFrame;}
     void adjustStartFrames(int _amt);
+    void setStartFrames();
 
     string getAttr(const char* _key){return attrs[_key];}
     void adjustForTransition(bool _on);

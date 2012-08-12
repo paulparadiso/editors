@@ -18,7 +18,7 @@
 
 class GuiCreator;
 
-class GuiConfigurator : public Observer{
+class GuiConfigurator : public Observer, public Subject{
 
 public:
 

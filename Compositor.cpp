@@ -41,6 +41,7 @@ Compositor::Compositor(){
     SubObMediator::Instance()->addObserver("update-timeline-framecount", this);
     SubObMediator::Instance()->addObserver("sheet-changed", this);
     SubObMediator::Instance()->addObserver("scrubber-position-changed", this);
+    SubObMediator::Instance()->addObserver("reset", this);
     videoTimeline = NULL;
     bSetPause = false;
     bHaveVideoTimeline = false;
@@ -49,11 +50,42 @@ Compositor::Compositor(){
 Compositor::~Compositor(){
 }
 
+void Compositor::vRender(){
+    pause();
+    //GuiConfigurator::Instance()->openSheet("info");
+    for(int i = 0; i < numFrames; i++){
+        ofSleepMillis(10);
+    }
+    GuiConfigurator::Instance()->closeSheet("info");
+    if(bHaveVideoTimeline){
+        videoTimeline->reset();
+    }
+    map<string,Timeline*>::iterator tIter;
+    for(tIter = audioTimelines.begin(); tIter != audioTimelines.end(); ++tIter){
+        tIter->second->reset();
+    }
+    SubObMediator::Instance()->update("reset",this);
+    SceneManager::Instance()->reset();
+    currentFrame = 0;
+}
+
 void Compositor::update(string _subName, Subject* _sub){
     if(_subName == "clip-selected"){
         string clipName = _sub->getAttr("path");
         cout << "Compositor asked to add " << clipName << " to " << activeTimeline << endl;
         addClipToTimeline(activeTimeline, MediaCabinet::Instance()->getClip(clipName));
+    }
+    if(_subName == "reset"){
+        if(bHaveVideoTimeline){
+        videoTimeline->reset();
+        }
+        map<string,Timeline*>::iterator tIter;
+        for(tIter = audioTimelines.begin(); tIter != audioTimelines.end(); ++tIter){
+            tIter->second->reset();
+        }
+        SceneManager::Instance()->reset();
+        currentFrame = 0;
+        blackOut();
     }
     if(_subName == "button"){
         cout << "compositor got an action of " << _sub->getAttr("action") << endl;
@@ -91,6 +123,10 @@ void Compositor::update(string _subName, Subject* _sub){
                 saveRecording();
             }
         }
+        if(_sub->getAttr("name") == "render-button"){
+                cout << "rendering" << endl;
+                vRender();
+            }
     }
     if(_subName == "timer-tick"){
         //cout << "Timer Tick" << endl;
@@ -240,7 +276,7 @@ void Compositor::addClipToTimeline(string _timeline, Clip* _clip){
     setAttr("new-clip-mode", _clip->getType());
     SubObMediator::Instance()->update("new-timeline-clip", this);
     //timelines[_timeline]->start();
-    updateFrameCount();
+    //updateFrameCount();
 }
 
 void Compositor::addClipToTimeline(string _timeline, Clip* _clip, string _id){
@@ -257,7 +293,7 @@ void Compositor::addClipToTimeline(string _timeline, Clip* _clip, string _id){
     } else {
         audioTimelines[_timeline]->addClip(_clip, _id);
     }
-    updateFrameCount();
+    //updateFrameCount();
 }
 
 void Compositor::removeClipFromTimeline(string _timeline, Clip* _clip){
@@ -287,11 +323,17 @@ void Compositor::update(){
         if(videoTimeline->getNumFrames() < currentFrame){
             blackOut();
         }
+        videoTimeline->update();
+    }
+    map<string,Timeline*>::iterator tIter;
+    for(tIter = audioTimelines.begin(); tIter != audioTimelines.end(); ++tIter){
+        tIter->second->update();
     }
     if(bSetPause){
         pause();
         bSetPause = false;
     }
+    updateFrameCount();
 }
 
 void Compositor::start(){
@@ -371,6 +413,7 @@ void Compositor::saveRecording(){
     map<string,string>msg;
     msg["target"] = "user-pager";
     msg["action"] = "reload";
+    SubObMediator::Instance()->update("audio-recording-complete", this);
     GuiConfigurator::Instance()->deliverMessage(msg);
     SceneManager::Instance()->popSheet();
 }

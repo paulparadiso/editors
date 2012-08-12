@@ -18,6 +18,7 @@ public:
     void setPos(ofVec2f _pos){pos = _pos;}
     void setSize(ofVec2f _size){size = _size;}
     virtual void draw(){}
+    virtual void drawFramed(){}
     bool processMouse(int _x, int _y, int _state);
     virtual void execute(){}
     void setPosition(int _x, int _y);
@@ -27,6 +28,7 @@ public:
     void update(string _subName, Subject *_sub);
     string getItemIndex(){return itemIndex;}
     string getItemType(){return itemType;}
+    int getTrackTime(string _track);
 
 protected:
     ofVec2f basePos;
@@ -36,6 +38,9 @@ protected:
     int timeRemainingOnTrack;
     string itemType;
     string itemIndex;
+    bool haveArabic;
+    bool displayArabic;
+    map<string,int>trackTimes;
     //GuiNumberRenderer *numberRenderer;
 };
 
@@ -47,6 +52,7 @@ public:
     void setupImage();
     void setupAudio();
     void draw();
+    void drawFramed();
     void drawVideo();
     void drawImage();
     void drawAudio();
@@ -58,6 +64,7 @@ public:
 private:
     ofImage preview;
     ofImage frame;
+    ofImage arabicFrame;
     string duration;
     string drawDuration;
     int durationInt;
@@ -101,12 +108,14 @@ protected:
     bool drawNext;
     ofTrueTypeFont texter;
     string activeTimeline;
+    bool bReloader;
 };
 
-class VideoPager : public Pager {
+class VideoPager : public Pager, public Observer {
 public:
     VideoPager(map<string, string> & _attrs);
     virtual void reload();
+    void update(string _subName, Subject *_sub);
 private:
     string dir;
     ofDirectory lister;

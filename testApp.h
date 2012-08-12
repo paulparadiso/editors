@@ -5,6 +5,7 @@
 #include "SubObMediator.h"
 #include "Subject.h"
 #include "SoundEffectsPlayer.h"
+#include "Compositor.h"
 
 class testApp : public ofBaseApp, public Subject {
 

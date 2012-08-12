@@ -59,6 +59,9 @@ public:
     virtual float* getData(){}
 
     void setFadeOut(bool _fade){bFadeOut = _fade;}
+    bool needsNudge(){return bNeedsNudge;}
+    bool hasTransition(){return bHasTransition;}
+    bool hasCrossfade(){return bHasCrossfade;}
 
 protected:
     string name;
@@ -72,6 +75,9 @@ protected:
     float duration;
     bool bPlayingPreview;
     float framerateAdjust;
+    bool bNeedsNudge;
+    bool bHasTransition;
+    bool bHasCrossfade;
 };
 
 class VideoClip : public Clip{
@@ -97,7 +103,7 @@ public:
     void setDuration(float _dur){duration = _dur;}
     float getPosition(){}
     float getTimeRemaining();
-    void setEffectStatus(int _effectStatus){effectStatus = _effectStatus;}
+    void setEffectStatus(int _effectStatus);
     unsigned char* getNextFrame();
     int getDataLength(){return video.getTotalNumFrames();}
     void setTransitionFrame(unsigned char* _frame);

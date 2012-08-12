@@ -28,6 +28,7 @@ void SceneManager::reset(){
     while(drawStack.size() > 0){
         popSheet();
     }
+    GuiConfigurator::Instance()->openSheet("attract");
 }
 
 void SceneManager::addMask(GuiSheet* _mask){
@@ -63,9 +64,9 @@ void SceneManager::popSheet(){
     if(haveMask){
         drawStack.pop_back();
     }
-    attrs["top-sheet"] = drawStack.back()->getName();
-    SubObMediator::Instance()->update("sheet-changed", this);
-    cout << "top sheet = " << attrs["top-sheet"] << endl;
+    //attrs["top-sheet"] = drawStack.back()->getName();
+    //SubObMediator::Instance()->update("sheet-changed", this);
+    //cout << "top sheet = " << attrs["top-sheet"] << endl;
 }
 
 void SceneManager::update(string _subName, Subject *_sub){

@@ -56,6 +56,9 @@ VideoClip::VideoClip(string _file) : Clip(){
     black = new unsigned char[854 * 480 * 3];
     transitionFrame = black;
     bPlayingPreview = false;
+    bHasTransition = false;
+    bNeedsNudge = false;
+    bHasCrossfade = false;
 }
 
 void VideoClip::setupVideo(string _file){
@@ -98,6 +101,25 @@ int VideoClip::getTotalNumFrames(){
     }
 }
 
+void VideoClip::setEffectStatus(int _effectStatus){
+    effectStatus = _effectStatus;
+    if(effectStatus == 2 || effectStatus == 4){
+        bNeedsNudge = true;
+    } else {
+        bNeedsNudge = false;
+    }
+    if(effectStatus == 3 || effectStatus == 4){
+        bHasTransition = true;
+    } else {
+        bHasTransition = false;
+    }
+    if(effectStatus == 4){
+        bHasCrossfade = true;
+    } else {
+        bHasCrossfade = false;
+    }
+}
+
 unsigned char* VideoClip::getPixels(){
     //return video.getPixels();
     //float pct = (float)video.getCurrentFrame() / (float)video.getTotalNumFrames();
@@ -130,7 +152,7 @@ unsigned char* VideoClip::getVideoPixels(){
 }
 
 unsigned char* VideoClip::getImagePixels(){
-    float pct = currentFrame / (24 * 5);
+    float pct = 5.0 * ((float)currentFrame / (24.0 * 5.0));
     if(effectStatus > 0){
         effects[effectStatus - 1]->process(img.getPixels(), clipData, vw, vh, pct);
         if(bFadeOut){

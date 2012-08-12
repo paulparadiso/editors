@@ -37,6 +37,10 @@ void GuiConfigurator::update(string _subName, Subject* _sub){
         if(action == "add"){
             closeSheet(target);
         }
+        if(action == "reset"){
+            SubObMediator::Instance()->update("reset", this);
+            bFirstStart = true;
+        }
     }
     if(_subName == "clip-selected"){
         closeSheet("none");
