@@ -47,8 +47,8 @@ void Pager::setPositions(){
         //cout << "setting position of " << i << " to " << x << ", " << y << endl;
         items[i]->setPosition(x,y);
         items[i]->setDisplaySize(itemDims.x, itemDims.y);
-        items[i]->setPagerPadding(pos.x, pos.y);
-        items[i]->setItemPadding(25,42);
+        items[i]->setPagerPadding(pos.x - 10, pos.y - 10);
+        items[i]->setItemPadding(25,53);
     }
     //cout << "positions set" << endl;
 }
@@ -216,7 +216,13 @@ void VideoPager::reload(){
     lister.allowExt("xml");
     lister.listDir(dir);
     string folder = dir + "/";
-    for(int i = 0; i < lister.size(); i++){
+    int counterStart;
+    if(lister.size() > 15){
+        counterStart = lister.size() - 15;
+    } else {
+        counterStart = 0;
+    }
+    for(int i = counterStart; i < lister.size(); i++){
         //xml.loadFile(lister.getPath(i));
         //string type = xml.getValue("type","none");
         //items.push_back(new VideoItem(xml.getValue("preview","none"), type));

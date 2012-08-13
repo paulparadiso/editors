@@ -2,7 +2,8 @@
 #define CLIP_H_INCLUDED
 
 #include "ofMain.h"
-#include "sndfile.h"
+//#include "sndfile.h"
+#include "WavHandler.h"
 #include "Effects.h"
 
 class Clip{
@@ -205,11 +206,11 @@ public:
 private:
     //ofSoundPlayer *audio;
     //ofPtr<ofFmodSoundPlayer> basePlayer;
-    ofRtAudioSoundStream *stream;
+    ofRtAudioSoundStream stream;
     float *sndBuf;
     float *processedBuffer;
-    SF_INFO sndInfo;
-
+    //SF_INFO sndInfo;
+    WavHandler wavHandler;
     /*Audio Effect*/
 
     void amplifyBuffer(float _amps);

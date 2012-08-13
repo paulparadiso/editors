@@ -1,7 +1,7 @@
 #include "timeline.h"
 #include "MediaCabinet.h"
 #include "Compositor.h"
-#include "sndfile.h"
+//#include "sndfile.h"
 
 ClipContainer::ClipContainer(Clip* _clip){
     clip = _clip;

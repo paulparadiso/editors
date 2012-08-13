@@ -392,14 +392,19 @@ void ImageClip::update(){
 
 AudioClip::AudioClip(string _file, float _dur) : Clip(){
     cout << "loading - " << _file << endl;
+    /*
     sndInfo.format = 0;
     SNDFILE *sndFile = sf_open(ofToDataPath(_file).c_str(),SFM_READ,&sndInfo);
     if(sndFile == NULL){
         cout << "file load failed." << endl;
     }
     numSamples = sndInfo.channels * sndInfo.frames;
-    sndBuf = new float[numSamples];
-    int numRead = sf_read_float(sndFile, sndBuf, numSamples);
+    */
+    wavHandler.loadWavFile(ofToDataPath(_file).c_str());
+    numSamples = wavHandler.getNumSamples();
+    //sndBuf = new float[numSamples];
+    //int numRead = sf_read_float(sndFile, sndBuf, numSamples);
+    sndBuf = wavHandler.getSamples();
     samplePosition = 0;
     echoPhase = 44100/6;
     echoDamp = 0.95;
@@ -412,8 +417,8 @@ AudioClip::AudioClip(string _file, float _dur) : Clip(){
     name = _file;
     duration = _dur;
     type = "audio";
-    stream = new ofRtAudioSoundStream;
-    stream->setup(this,sndInfo.channels,0,sndInfo.samplerate,256, 32);
+    //stream = new ofRtAudioSoundStream();
+    stream.setup(this,1,0,44100,256, 32);
     cout << "opened file " << _file << " has " << numSamples << " samples." << endl;
     effectStatus = 0;
     framerateAdjust = 44100 / 24.0;
@@ -531,7 +536,7 @@ void AudioClip::audioRequested(float * output, int bufferSize, int nChannels){
         if(bPlaying){
             output[i] = processedBuffer[samplePosition];
             if(samplePosition < numProcessedSamples){
-                samplePosition += sndInfo.channels;
+                samplePosition += wavHandler.getNumChannels();
             } else {
                 samplePosition = 0;
                 bPlaying = false;

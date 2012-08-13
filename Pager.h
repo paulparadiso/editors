@@ -28,7 +28,6 @@ public:
     void update(string _subName, Subject *_sub);
     string getItemIndex(){return itemIndex;}
     string getItemType(){return itemType;}
-    int getTrackTime(string _track);
 
 protected:
     ofVec2f basePos;
@@ -40,7 +39,6 @@ protected:
     string itemIndex;
     bool haveArabic;
     bool displayArabic;
-    map<string,int>trackTimes;
     //GuiNumberRenderer *numberRenderer;
 };
 

@@ -1,5 +1,6 @@
 #include "AudioRenderer.h"
-#include "sndfile.h"
+//#include "sndfile.h"
+#include "WavHandler.h"
 
 AudioRenderer::AudioRenderer()
 {
@@ -39,6 +40,7 @@ void AudioRenderer::renderAudio(string _fileName, vector<Timeline*> &_timelines)
 }
 
 void AudioRenderer::writeFile(string _file, float* _buf, int _numSamples){
+    /*
     SF_INFO wInfo;
     wInfo.samplerate = 44100;
     wInfo.format = SF_FORMAT_WAV | SF_FORMAT_PCM_32;
@@ -48,6 +50,9 @@ void AudioRenderer::writeFile(string _file, float* _buf, int _numSamples){
     int wrote = sf_write_float(wFile, _buf, _numSamples);
     cout << "wrote " << wrote << " to file " << _file << endl;
     sf_close(wFile);
+    */
+    WavHandler wavHandler;
+    wavHandler.writeWavFile(ofToDataPath(_file).c_str(), _buf, _numSamples);
 }
 
 AudioRenderer::~AudioRenderer()
