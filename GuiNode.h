@@ -27,6 +27,7 @@ public:
     virtual void unclick(){}
     virtual void click(){}
     virtual bool getClicked(){}
+    virtual void activate(){}
     void initialize();
     string getName(){return name;}
     string setName(string &_name){name = _name; cout << "setting name to " << name << endl;}
@@ -57,9 +58,12 @@ protected:
     string type;
     string parent;
     int dur;
+
+    bool haveDelay;
+    bool checkDelay;
+    int startTime;
+    int delayTime;
 };
 
-ofVec2f stringToVec2f(string _in);
-ofVec3f stringToVec3f(string _in);
 
 #endif // GUINODE_H

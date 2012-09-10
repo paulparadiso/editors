@@ -38,7 +38,10 @@ void GuiSheet::activate(){
         Compositor::Instance()->rewind();
     }
     */
-
+    vector<GuiNode*>::iterator gIter;
+    for(gIter = nodes.begin(); gIter != nodes.end(); ++gIter){
+        (*gIter)->activate();
+    }
 }
 
 /*
@@ -152,7 +155,7 @@ void GuiSheet::draw(){
     if(name == "audio-recorder"){
         ofImage ball;
         ball.loadImage("cuts/ball_clipped.png");
-        float pct = Compositor::Instance()->getRecordingPosition();
+        float pct = SceneManager::Instance()->getRecordingPosition();
         int maxX = 837;
         int xDiff = maxX * pct;
         ofRect(711 + xDiff, 566,maxX - xDiff ,31);

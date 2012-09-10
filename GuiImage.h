@@ -20,7 +20,6 @@ private:
     ofImage img;
     ofImage imgArabic;
     bool haveArabic;
-    bool displayArabic;
 };
 
 #endif // GUIIMAGE_H

@@ -2,9 +2,10 @@
 #define CLIP_H_INCLUDED
 
 #include "ofMain.h"
-//#include "sndfile.h"
-#include "WavHandler.h"
+#include "sndfile.h"
+//#include "WavHandler.h"
 #include "Effects.h"
+#include "ofxFFmpegVideoPlayer.h"
 
 class Clip{
 
@@ -54,12 +55,12 @@ public:
     string getName(){return name;}
     string getType(){return type;}
     int getEffectStatus(){return effectStatus;}
-    virtual void setEffectStatus(int _effectStatus){};
+    virtual void setEffectStatus(int _effectStatus){cout << "Base setEffectStatus" << endl;}
 
     virtual int getDataLength(){}
     virtual float* getData(){}
 
-    void setFadeOut(bool _fade){bFadeOut = _fade;}
+    virtual void setFadeOut(bool _fade){bFadeOut = _fade;}
     bool needsNudge(){return bNeedsNudge;}
     bool hasTransition(){return bHasTransition;}
     bool hasCrossfade(){return bHasCrossfade;}
@@ -124,7 +125,7 @@ public:
     void setupImage(string _file);
 
 private:
-    ofVideoPlayer video;
+    ofxFFmpegVideoPlayer video;
     ofImage img;
     int currentFrame;
     ofTexture dispTex;
@@ -193,8 +194,10 @@ public:
     float* getData();
     float *allData;
     void setEffectStatus(int _effectStatus);
+    void setEffect();
     float* getSamples();
     float getSample(int _index);
+    void setFadeOut(bool _fade);
 
     /*New Frame Controls*/
     int getCurrentFrame();
@@ -209,13 +212,14 @@ private:
     ofRtAudioSoundStream stream;
     float *sndBuf;
     float *processedBuffer;
-    //SF_INFO sndInfo;
-    WavHandler wavHandler;
+    float *fadedBuffer;
+    SF_INFO sndInfo;
+    //WavHandler wavHandler;
     /*Audio Effect*/
 
-    void amplifyBuffer(float _amps);
-    void fadeBuffer(float _inPct, float _outPct);
-    void echoBuffer();
+    void amplifyBuffer(float* _inBuf, float* _outBuf, float _amps);
+    void fadeBuffer(float* _inBuf, float* _outBuf, float _inPct, float _outPct);
+    void echoBuffer(float* _inBuf, float* _outBuf);
 
     int echoPhase;
     float echoDamp;

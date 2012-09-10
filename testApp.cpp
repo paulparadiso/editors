@@ -5,29 +5,55 @@
 void testApp::setup(){
     ofEnableAlphaBlending();
     ofEnableSmoothing();
-    string file = "sheets.xml";
-    Compositor::Instance()->update();
+    string file = "../sheets.xml";
     GuiConfigurator::Instance()->addFile(file);
-    //gCr = new GuiCreator();
+    GuiConfigurator::Instance()->getTimelines();
     GuiConfigurator::Instance()->getTags();
     GuiConfigurator::Instance()->makeGUI();
-    img.loadImage("cuts/main_bg_20.png");
     ofToggleFullscreen();
-    ofSetFrameRate(30);
+    //ofSetFrameRate(30);
     sfxPlayer = new SoundEffectsPlayer();
+    timeOfLastInput = ofGetElapsedTimef();
+    timeOfLastInteraction = ofGetElapsedTimef();
+    inputDelayTime = 0.2;
+    checkTimeOut = true;
+    timeOutCounter = 30.0;
+    SubObMediator::Instance()->addObserver("sheet-changed", this);
 }
 
 //--------------------------------------------------------------
 void testApp::update(){
-    //Compositor::Instance()->update();
     SceneManager::Instance()->update();
-    //cout << "Frame rate = " << ofGetFrameRate() << endl;
+    if(checkTimeOut){
+        if(SceneManager::Instance()->getIsPlaying()){
+            timeOfLastInteraction = ofGetElapsedTimef();
+        }
+        if(ofGetElapsedTimef() > timeOfLastInteraction + timeOutCounter){
+            cout << "Inactivity time triggered.  Resetting." << endl;
+            SubObMediator::Instance()->update("reset", this);
+            MediaCabinet::Instance()->reset();
+        }
+    }
+}
+
+void testApp::update(string _subName, Subject *_sub){
+    /*
+    if(_subName == "sheet-changed"){
+        string topSheet = _sub->getAttr("top-sheet");
+        if(topSheet == "main"){
+            cout << "starting inactivity timer." << endl;
+            checkTimeOut = true;
+            timeOfLastInteraction = ofGetElapsedTimef();
+        } else {
+            cout << "stopping inactivity timer." << endl;
+            checkTimeOut = false;
+        }
+    }
+    */
 }
 
 //--------------------------------------------------------------
 void testApp::draw(){
-    //img.draw(0,0);
-    //gc->draw();
 	SceneManager::Instance()->draw();
 }
 
@@ -35,12 +61,6 @@ void testApp::draw(){
 void testApp::keyPressed(int key){
     if(key == 'f'){
         ofToggleFullscreen();
-    }
-    if(key == 'r'){
-        Compositor::Instance()->saveVideo("newvid");
-    }
-    if(key == 'a'){
-        Compositor::Instance()->saveAudio("test.wav");
     }
 }
 
@@ -78,8 +98,11 @@ void testApp::mousePressed(int x, int y, int button){
     }
     timeOfLastInteraction = ofGetElapsedTimef();
     */
-    updateMouseState("down", x, y, button);
-    timeOfLastInteraction = ofGetElapsedTimef();
+    if(ofGetElapsedTimef() - timeOfLastInput > inputDelayTime){
+        updateMouseState("down", x, y, button);
+        timeOfLastInteraction = ofGetElapsedTimef();
+        timeOfLastInput = ofGetElapsedTimef();
+    }
 }
 
 //--------------------------------------------------------------

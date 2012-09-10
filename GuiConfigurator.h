@@ -10,6 +10,7 @@
 #include "GuiScrubber.h"
 #include "GuiSheet.h"
 #include "GuiMediaPreview.h"
+#include "GuiAnimPNG.h"
 #include "GuiViewport.h"
 #include "SceneManager.h"
 #include "Observer.h"
@@ -25,6 +26,7 @@ public:
     static GuiConfigurator* Instance();
     void addFile(string _file);
     void getTags();
+    void getTimelines();
     void makeGUI();
     void makeNode(string _handle, map<string, string> &_attrs);
     void print();

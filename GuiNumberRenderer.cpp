@@ -1,4 +1,5 @@
 #include "GuiNumberRenderer.h"
+#include "SceneManager.h"
 
 GuiNumberRenderer::GuiNumberRenderer(){
     lister.allowExt("png");
@@ -29,8 +30,6 @@ GuiNumberRenderer::GuiNumberRenderer(){
             clipTimeArabic[number].loadImage(path);
         }
     }
-    displayArabic = true;
-    SubObMediator::Instance()->addObserver("button", this);
 }
 
 GuiNumberRenderer::GuiNumberRenderer(string _path){
@@ -56,14 +55,14 @@ GuiNumberRenderer::~GuiNumberRenderer()
 
 void GuiNumberRenderer::drawNumber(int _num, int _x, int _y, int _sx, int _sy, int _type){
     if(_type == 0){
-        if(!displayArabic){
+        if(!SceneManager::Instance()->getDisplayArabic()){
             timeRemainingEnglish[_num].draw(_x, _y, _sx, _sy);
         } else {
             clipTimeArabic[_num].draw(_x, _y, _sx, _sy);
         }
     }
     if(_type == 1){
-        if(!displayArabic){
+        if(!SceneManager::Instance()->getDisplayArabic()){
             timeRemainingEnglish[_num].draw(_x, _y, _sx, _sy);
         } else {
             timeRemainingArabic[_num].draw(_x, _y, _sx, _sy);
@@ -72,11 +71,4 @@ void GuiNumberRenderer::drawNumber(int _num, int _x, int _y, int _sx, int _sy, i
 }
 
 void GuiNumberRenderer::update(string _subName, Subject* _sub){
-    if(_subName == "button"){
-        string target = _sub->getAttr("target");
-        string action = _sub->getAttr("action");
-        if(target == "language" && action == "switch"){
-            displayArabic = !displayArabic;
-        }
-    }
 }

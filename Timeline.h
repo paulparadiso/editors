@@ -6,159 +6,272 @@
 #include "Observer.h"
 #include "Subject.h"
 #include "SubObMediator.h"
-#include "Timer.h"
-#include "Effects.h"
+//#include "GuiConfigurator.h"
+#include "Utils.h"
 
-class ClipContainer : public Observer, public Subject{
+/*
+The timeline holds a series of ClipContainers in order and receives ticks from
+the compositor to advance their frame.
+*/
 
-public:
-    ClipContainer(Clip* _clip);
-    Clip* getClip(){return clip;}
-    void play(){clip->play();}
-    void play(float _runningTime){clip->play(_runningTime);}
-    void stop(){clip->stop();}
-    void pause(){clip->pause();}
-    void reset(){clip->reset();}
-    void update(){clip->update();}
-    void unpause(){clip->unpause();}
-    void draw(int _x, int _y, int _sx, int _sy){clip->draw(_x,_y,_sx,_sy);}
-    string getType(){return clip->getType();}
-    float getStartTime(){return clip->getStartTime();}
-    float getStopTime(){return clip->getStopTime();}
-    float getTimeRemaining(){return clip->getTimeRemaining();}
-    float getPosition(){return clip->getPosition();}
-    const char* getID(){cout << "returning " << clipID << endl; return clipID.c_str();}
-    void setID(string _id){clipID = _id;}
-    bool isDone(){return clip->isDone();}
-    unsigned char* getNextFrame(){return clip->getNextFrame();}
-    void setTransitionFrame(unsigned char * _frame){clip->setTransitionFrame(_frame);}
-    void releaseTransitionFrame(){clip->releaseTransitionFrame();}
-    unsigned char * getLastFrame(){return clip->getLastFrame();}
-
-    void update(string _subName, Subject* _sub);
-
-    float getDuration(){return clip->getDuration();}
-
-    int getDataLength(){clip->getDataLength();}
-    float* getData(){return clip->getData();}
-
-    void setPosition(float _pos){clip->setPosition(_pos);}
-    int getEffectStatus(){return clip->getEffectStatus();}
-    void setEffectStatus(int _effectStatus){effectStatus = _effectStatus;}
-
-    /*New Frame Controls*/
-    int getCurrentFrame(){return clip->getCurrentFrame();}
-    int getTotalNumFrames(){return clip->getTotalNumFrames();}
-    int getTotalNumSamples(){return clip->getTotalNumSamples();}
-    unsigned char* getPixels();
-    float *getSamples(){return clip->getSamples();}
-    float getSample(int _index){return clip->getSample(_index);}
-    void setFrame(int _frameNum){clip->setFrame(_frameNum);}
-
-    int getStartFrame(){return startFrame;}
-    int getStopFrame(){return stopFrame;}
-    void setStartFrame(int _startFrame);
-    void adjustStartFrame(int _amt);
-
-    bool hasCrossfade(){return clip->hasCrossfade();}
-    void setTransitionOut(bool _fade){clip->setFadeOut(_fade);}
-    bool hasTransition(){return clip->hasTransition();}
-    bool needsNudge(){return clip->needsNudge();}
-    void setFadeOut(bool _fade){clip->setFadeOut(_fade);}
-
-private:
-    /*Effects*/
-    float duration;
-    int effectStatus;
-    Clip* clip;
-    int startFrame;
-    int stopFrame;
-    unsigned char * buffer;
-    string clipID;
-    bool bHaveTransition;
-    bool bCrossfade;
-
-};
+class ClipContainer;
 
 class Timeline : public Observer, public Subject, public ofBaseApp{
 
 public:
 
+    /*
+    Constructor.
+    */
+
     Timeline(float _totalTime, string _name, string _mode);
+
+    /*
+    The pos is used as a base position for draw the GuiButtons.
+    */
+
+    Timeline(float _totalTime, string _name, string _mode, string _pos);
+
+    /*
+    Add and remove a clip.
+    */
+
     void addClip(Clip *_clip);
-    void addClip(Clip *_clip, string _id);
-    void removeClip(Clip *_clip);
-    void removeClip(string _id);
+    void removeClip(ClipContainer *_clip);
+
+    /*
+    Update the timeline and it's ClipContainers.
+    */
+
+    void update();
+
+    /*
+    Observer::update
+    */
+
+    void update(string _subName, Subject* _sub);
+
+    /*
+    Reset the timeline.
+    */
+    void reset();
+
+    /*
+    Whether the timeline is empty.
+    */
+
+    bool getIsEmpty();
+
+    /*
+    Set the timelines frame.  This will set the position of whichever clip is within that range.
+    */
+
+    void setFrame(int _frame);
+    void setAudioFrame(int _frame);
+    void setVideoFrame(int _frame);
+
+    /*
+    Return the current frame of the timeline.
+    */
+
+    int getCurrentFrame();
+
+    /*
+    Get the total number of frames in the timeline.
+    */
+
+    int getNumFrames(){return numFrames;}
+
+    /*
+    Return either the total number of frames or samples.
+    */
+
+    int getTotalLength;
+
+    /*
+    Return the pixels at the head of the timeline.
+    */
+
+    unsigned char* getPixels();
+
+    /*
+    Blend all frames that are currently overlapping on the timeline.  Whenever there is a wipe or
+    crossfade applied to an effect.
+    */
+
+    void compositeFrames(unsigned char* _one, unsigned char* _two, int _w, int _h, int _bd, bool _blend);
+
+    /*
+    Return whether the timeline is currently compositing.
+    */
+
+    bool isCompositing(){return bCompositing;};
+
+    /*
+    Return whether a new frame is ready to be sent to the compositor.
+    */
+
+    bool hasNewFrame(){return bHaveNewFrame;}
+
+    /*
+    Adjust the start frames of all ClipContainers.
+    */
+
+    void adjustStartFrames(int _amt);
+
+    /*
+    Set the start frames of all ClipContainers.
+    */
+    void setStartFrames();
+
+    /*
+    Subject::getAttr.
+    */
+
+    string getAttr(const char* _key){return attrs[_key];}
+
+    /*
+    Stream audioRequested.  For audio timelines.
+    */
+
+    void audioRequested(float * output, int bufferSize, int nChannels);
+
+    /*
+    Start, stop, pause, rewind.
+    */
+
     void start();
     void stop();
     void pause();
-    void unpause();
-    void restart();
     void rewind();
-    void update();
-    void update(float);
-    void update(string _subName, Subject* _sub);
-    void updateRun();
-    void reset();
-    void draw(int _x, int _y, int _sx, int _sy);
-    void setScrubTime(float _pct);
-    int getEffectStatus(string _name);
-    void setEffectStatus(string _name, int _effectStatus);
+
+    /*
+    Return the timelines mode.  audio or video.
+    */
+
     string getType();
-    bool getIsEmpty();
-    int getTotalLength();
-    void assembleData();
-    float* getData(){return allData;}
-    float* allData;
-    float getTimeRemaining(){return timeRemaining;};
-    unsigned char* getNextFrame();
-    void setupRun();
-    void clear();
 
-    /*New frame functions*/
-    int getCurrentFrame();
-    void setFrame(int _frame);
-    void setVideoFrame(int _frame);
-    void setAudioFrame(int _frame);
-    unsigned char* getPixels();
-    int getNumFrames(){return numFrames;}
-    void compositeFrames(unsigned char* _one, unsigned char* _two, int _w, int _h, int _bd, bool _blend);
-    bool hasNewFrame(){return bHaveNewFrame;}
-    void adjustStartFrames(int _amt);
-    void setStartFrames();
+    /*
+    Call draw on each of the ClipContainers.
+    */
 
-    string getAttr(const char* _key){return attrs[_key];}
-    void adjustForTransition(bool _on);
-    bool isCompositing(){return bCompositing;}
+    void draw();
 
-    void audioRequested(float * output, int bufferSize, int nChannels);
-    void updateAudio();
+    /*
+    Find and remove dead clips.
+    */
+
+    void clean();
+    bool bHaveDeadClips;
+    bool haveClips();
 
 private:
+
+    /*
+    The ClipContainer vector.  Maybe should be a list?
+    */
+
     vector<ClipContainer*> clips;
+
+    /*
+    Vector of ClipContainers that are active at any given frame.
+    */
+
     vector<ClipContainer*> activeClips;
-    map<float,Clip*> mappedClips;
-    ClipContainer *currentClip;
-    int clipIndex;
-    float startTime, runningTime, totalTime;
-    bool isPlaying;
-    bool isTransitioning;
-    int totalLength;
-    int timeRemaining;
+
+    /*
+    Attrs used by Subject.
+    */
     map<string,string> attrs;
 
+    /*
+    The current number of frames.
+    */
+
     int numFrames;
+
+    /*
+    The maximum number of frames allowable on the timeline.
+    */
+
     int currentMaxFrames;
+
+    /*
+    Frame buffer to hold the front most frame.
+    */
+
     unsigned char * frameBuffer;
+
+    /*
+    Output used for blending and compositing frames.
+    */
     unsigned char * output;
-    float* sndBuffer;
+
+    /*
+    The current sample to return from the frontmost clip.
+    */
+
     int samplePosition;
+
+    /*
+    The audio streamer.
+    */
+
     ofRtAudioSoundStream *stream;
+
+    /*
+    Whether or not there is a new frame.
+    */
     bool bHaveNewFrame;
+
+    /*
+    Whether the timeline is currently compositing frames.
+    */
+
     bool bCompositing;
+
+    /*
+    Used to detect larger just in frame count.
+    */
+
     int previousFrame;
 
+    /*
+    The timeline mode, audio or video.
+    */
+
     string mode;
+
+    /*
+    The time remaining on the track.  Used to update SceneManager of the tracks
+    remaining time.
+    */
+
+    float timeRemaining;
+
+    /*
+    Whether the timeline is currently playing.
+    */
+
+    bool isPlaying;
+
+    /*
+    The base position for drawing buttons.
+    */
+
+    ofVec2f basePos;
+
+    /*
+    The total length of the timeline.
+    */
+
+    float totalTime;
+
+    /*
+    Recently changed.  Effects opening fix.
+    */
+
+    bool bRecentChange;
 };
 
 #endif // TIMELINE_H_INCLUDED

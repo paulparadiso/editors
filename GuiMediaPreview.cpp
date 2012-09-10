@@ -8,6 +8,7 @@
  */
 
 #include "GuiMediaPreview.h"
+#include "SceneManager.h"
 
 GuiMediaPreview::GuiMediaPreview(map<string,string> &_attrs): GuiNode(){
     attrs = _attrs;
@@ -16,6 +17,7 @@ GuiMediaPreview::GuiMediaPreview(map<string,string> &_attrs): GuiNode(){
     exit = NULL;
     select = NULL;
     play = NULL;
+    havePreview = false;
     //cout << "================>>>>>>>>>>>MEDIAPREVIEW<<<<<<<<<<<============== " << type << endl;
     if(type == "video" || type == "image"){
         setupVideo();
@@ -25,18 +27,20 @@ GuiMediaPreview::GuiMediaPreview(map<string,string> &_attrs): GuiNode(){
 }
 
 void GuiMediaPreview::setupVideo(){
-    preview = NULL;
-    frame.loadImage("cuts/pb_preview_frame.png");
+    //frame.loadImage("cuts/pb_preview_frame.png");
     exit = new GuiButton("cuts/preview_exit.png");
     select = new GuiButton("cuts/preview_add.png");
     if(type == "video"){
         play = new GuiButton("cuts/pb_preview_replay.png");
+        play->setAttr("sfx","button11");
     }
     exit->setAttr("action", "close");
     exit->setChannel("button");
+    exit->setAttr("sfx","button11");
     select->setAttr("action", "message");
     select->setAttr("levels", "2");
     select->setChannel("clip-selected");
+    select->setAttr("sfx","button11");
 	selectOffset.x = 40;
     selectOffset.y = 320;
     exitOffset.x = 770;
@@ -47,16 +51,19 @@ void GuiMediaPreview::setupVideo(){
 
 void GuiMediaPreview::setupAudio(){
     preview = NULL;
-    frame.loadImage("cuts/audio_preview.png");
+    //frame.loadImage("cuts/audio_preview.png");
     ball.loadImage("cuts/ball_clipped.png");
     exit = new GuiButton("cuts/preview_exit.png");
     exit->setAttr("action", "close");
     exit->setChannel("button");
+    exit->setAttr("sfx","button11");
     select = new GuiButton("cuts/preview_add.png");
     play = new GuiButton("cuts/preview_add.png");
+    play->setAttr("sfx","button11");
     select->setAttr("action", "message");
     select->setAttr("levels", "2");
     select->setChannel("clip-selected");
+    select->setAttr("sfx","button11");
     selectOffset.x = 230;
     selectOffset.y = 505;
     exitOffset.x = 1525;
@@ -72,6 +79,14 @@ void GuiMediaPreview::setSelectTarget(string _target){
 void GuiMediaPreview::execute(){
 }
 
+void GuiMediaPreview::activate(){
+    /*
+    if(preview){
+        preview->startPreview();
+    }
+    */
+}
+
 void GuiMediaPreview::setPosition(ofVec2f _pos){
     pos = _pos;
     exit->setPosition(_pos + exitOffset);
@@ -82,27 +97,31 @@ void GuiMediaPreview::setPosition(ofVec2f _pos){
 }
 
 void GuiMediaPreview::update(){
-    if(!preview){
+    if(!havePreview){
         preview = MediaCabinet::Instance()->getLastClip();
         cout << "getting clip." << endl;
         MediaCabinet::Instance()->increaseClipHold(preview);
-        preview->startPreview();
+        //preview->startPreview();
         //cout << "setting select path to " << preview->getName() << endl;
         select->setAttr("path", preview->getName());
+        havePreview = true;
     } else {
         preview->update();
     }
 }
 
 void GuiMediaPreview::draw(){
-    if(!preview){
+    if(!havePreview){
         preview = MediaCabinet::Instance()->getLastClip();
-        preview->startPreview();
+        //preview->startPreview();
+        havePreview = true;
     }
     if(type == "video" || type == "image"){
         preview->drawPreview(pos.x - 15 , pos.y + 5, 850, 475);
+        //SceneManager::Instance()->drawPreviewFrame(pos.x - 15 , pos.y + 5, 850, 475);
         //frame.draw(pos.x,pos.y);
-        frame.draw(0,0);
+        //frame.draw(0,0);
+        SceneManager::Instance()->drawPreviewFrame(0,0);
         select->draw();
         if(type == "video"){
             play->draw();
@@ -112,7 +131,8 @@ void GuiMediaPreview::draw(){
         float pct = preview->getPosition();
         int maxX = 937;
         int xDiff = 937 * pct;
-        frame.draw(pos.x ,pos.y);
+        //frame.draw(pos.x ,pos.y);
+        SceneManager::Instance()->drawAudioPreviewFrame(pos.x, pos.y);
         ofRect(pos.x + 574 + xDiff, pos.y + 559,937 - xDiff ,31);
         ball.draw(pos.x + 574 + xDiff - (ball.getWidth() / 2), pos.y + 559 - 3);
         //ofRect(play->getPos().x,play->getPos().y,play->getSize().x, play->getSize().y);
@@ -125,14 +145,14 @@ bool GuiMediaPreview::isInside(int _x, int _y){
         preview->stopPreview();
         //MediaCabinet::Instance()->removeClip(preview);
         MediaCabinet::Instance()->decreaseClipHold(preview);
-        preview = NULL;
+        havePreview = false;
         return true;
     }
     if(select->isInside(_x,_y)){
         select->execute();
         preview->stopPreview();
         MediaCabinet::Instance()->decreaseClipHold(preview);
-        preview = NULL;
+        havePreview = false;
         return true;
     }
     if(play){
@@ -148,14 +168,19 @@ bool GuiMediaPreview::processMouse(int _x, int _y, int _state){
 		if(exit->isInside(_x, _y)){
 			exit->execute();
 			preview->stopPreview();
-			//preview = NULL;
+			MediaCabinet::Instance()->decreaseClipHold(preview);
+			havePreview = false;
+			preview = NULL;
 			return true;
 		}
         if(select->isInside(_x,_y)){
             select->execute();
             //select->setChannel("button");
             preview->stopPreview();
-            //preview = NULL;
+            MediaCabinet::Instance()->decreaseClipHold(preview);
+            havePreview = false;
+            preview = NULL;
+            cout << "MediaPreview done." << endl;
             return true;
         }
         if(play){

@@ -4,6 +4,8 @@
 #include "ofMain.h"
 #include "Timeline.h"
 
+class Timeline;
+
 class AudioRenderer
 {
     public:

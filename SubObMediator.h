@@ -19,9 +19,17 @@ class SubObMediator
         void removeObserver(Observer* _obs);
     protected:
     private:
-        SubObMediator(){}
+        SubObMediator();
         map<string,vector<Observer*> > observers;
         static SubObMediator* mInstance;
+
+        /*
+        Make sure subjects aren't added during update cycle.
+        */
+
+        bool bHaveNewObservers;
+        vector<Observer*> newObservers;
+        vector<string> newObserverChannels;
 };
 
 #endif // SUBOBMEDIATOR_H

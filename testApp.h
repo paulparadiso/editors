@@ -4,10 +4,11 @@
 #include "GuiConfigurator.h"
 #include "SubObMediator.h"
 #include "Subject.h"
+#include "Observer.h"
 #include "SoundEffectsPlayer.h"
 #include "Compositor.h"
 
-class testApp : public ofBaseApp, public Subject {
+class testApp : public ofBaseApp, public Subject, public Observer {
 
 	public:
 		void setup();
@@ -24,10 +25,26 @@ class testApp : public ofBaseApp, public Subject {
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
 
+        void update(string _subName, Subject* _sub);
+
         GuiConfigurator *gc;
         ofImage img;
+
+        /*
+        The last time any interaction occured.
+        */
+
         float timeOfLastInteraction;
+
+        /*
+        The last time an input was sent (mouse down).
+        */
+
+        float timeOfLastInput;
         float timeOutCounter;
+        bool checkTimeOut;
+
+        float inputDelayTime;
 
         void updateMouseState(const char * _state, int _x, int _y, int _button);
         map<string,string> attrs;

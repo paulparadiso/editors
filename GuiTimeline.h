@@ -1,53 +1,161 @@
 #ifndef GUITIMELINE_H_INCLUDED
 #define GUITIMELINE_H_INCLUDED
 
-#include "GuiNode.h"
-#include "Compositor.h"
 #include "GuiButton.h"
-#include "GuiConfigurator.h"
 #include "SubObMediator.h"
 #include "Observer.h"
 #include "Subject.h"
 
+/*
+The timeline button draws itself rather than containing
+an image.  Appears the same in arabic.
+*/
+
+class ClipContainer;
+
 class GuiTimelineButton : public GuiButton
 {
     public:
-        GuiTimelineButton(float _length, string _type);
+
+        /*
+        Constructor takes length of clip and it's type (audio/video)
+        */
+
+        GuiTimelineButton(float _length, string _type, ClipContainer *_partnerClip);
         virtual ~GuiTimelineButton(){}
+
+        /*
+        Reset the length and rebuild the button.
+        */
+
+        void setLength(float _length);
+
+        /*
+        Redefine execute
+        */
+
+        void execute();
+
+        /*
+        Draw the button.
+        */
+
         void draw();
+
+        /*
+        Draw the loosie version when the effects menu is open.
+        */
+
         void drawLoosie();
+
+        /*
+        Set the totalLength of the button.
+        */
+
         void setTotalLength(float _totalWidth);
+
+        /*
+        Make the drop shadow.
+        */
+
         void makeDropShadow();
+
+        /*
+        Make the Button.
+        */
+
         void makeButton();
+
+        /*
+        Make the inner curve.
+        */
+
         void makeInnerCurve();
+
+        /*
+        Make the outer curve.
+        */
+
         void makeOuterCurve();
+
+        /*
+        Update.
+        */
+
         void update();
+
+        /*
+        Observer::update function.
+        */
+
         void update(string _subName, Subject* _sub);
-        void setAwaitingResponse(bool _b){bAwaitingResponse = _b;}
-        bool getIsAwaitingResponse(){return bAwaitingResponse;}
-        void setId(string _id){id = _id;}
 
     protected:
     private:
-        float width, height, totalWidth;
+
+        /*
+        Size parameter.
+        */
+
+        float width;
+        float height;
+        float totalWidth;
         float length;
         float widthSegment, heightSegment;
         float curveRadius, curveBuffer;
+
+        /*
+        Paths for drawing components.
+        */
+
         ofPath buttonPath;
         ofPath dropShadow;
         ofPath innerCurve;
         ofPath outerCurve;
 
-        string id;
+        /*
+        Collection of ofColors used for drawing border according to effect.
+        */
 
         map<string,ofColor*> colors;
+
+        /*
+        The currently active effect.
+        */
+
         string activeEffect;
 
+        /*
+        The image drawn on top of the button for audio or video.
+        */
+
         ofImage img;
-        bool bLoosie;
+
+        /*
+        Whether awaiting response from effects menu.
+        */
+
         bool bAwaitingResponse;
+
+        /*
+        Whether is loosie.
+        */
+
+        bool bLoosie;
+
+        /*
+        The type of clip.
+        */
         string type;
+
+        /*
+        The clip to which the button is connected.
+        */
+
+        ClipContainer *partnerClip;
 };
+
+/*
 
 class GuiTimeline : public GuiNode, public Observer, public Subject {
 
@@ -66,9 +174,6 @@ public:
     void findAndDeleteItem();
     float getTimeRemaining(){return maxTime - currentTime;}
     string getAttr(const char* _key){string ret = attrs[_key]; cout << "gui returning " << ret << endl; return ret;}
-    /*This is bad.
-    Inherits two versions of getAttr.
-    */
 
 private:
     list<GuiTimelineButton*> images;
@@ -82,5 +187,6 @@ private:
     int maxTime;
     int clipIDCounter;
 };
+*/
 
 #endif // GUITIMELINE_H_INCLUDED

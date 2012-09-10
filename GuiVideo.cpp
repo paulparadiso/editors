@@ -1,9 +1,12 @@
 #include "GuiVideo.h"
 
 GuiVideo::GuiVideo(map<string,string> &_attrs) : GuiButton(_attrs){
-    vid.loadMovie(attrs["movie"]);
+    //vid.loadMovie(attrs["movie"]);
+    haveArabic = false;
+    displayArabic = false;
     map<string,string>::iterator mIter;
     mIter = attrs.find("arabic");
+    /*
     if(mIter != attrs.end()){
         haveArabic = true;
         displayArabic = false;
@@ -11,17 +14,33 @@ GuiVideo::GuiVideo(map<string,string> &_attrs) : GuiButton(_attrs){
         vidArabic.stop();
         vidArabic.setLoopState(OF_LOOP_NORMAL);
     }
+    */
     //vid.play();
-    vid.stop();
-    vid.setLoopState(OF_LOOP_NORMAL);
+    //vid.stop();
+    //vid.setLoopState(OF_LOOP_NORMAL);
     SubObMediator::Instance()->addObserver("sheet-changed", this);
     SubObMediator::Instance()->addObserver("button", this);
+    vid = NULL;
+}
+
+void GuiVideo::activate(){
+    if(haveDelay){
+        startTime = ofGetElapsedTimef();
+        checkDelay = true;
+    }
+    //vid.loadMovie(attrs["movie"]);
 }
 
 void GuiVideo::update(){
-    if(vid.isPlaying()){
-        vid.update();
-        vidArabic.update();
+    if(vid){
+        vid->update();
+        //vidArabic.update();
+    }
+    if(haveDelay && checkDelay){
+        if(ofGetElapsedTimef() > startTime + delayTime){
+            execute();
+            checkDelay = false;
+        }
     }
 }
 
@@ -30,20 +49,30 @@ void GuiVideo::update(string _subName, Subject* _sub){
         string topSheet = _sub->getAttr("top-sheet");
         //cout << "video got sheet change.  New sheet = " << topSheet << endl;
         if(topSheet == parent){
-            if(!vid.isPlaying()){
+            if(!vid){
                 cout << "video starting." << endl;
-                vid.play();
+                vid = new ofVideoPlayer();
+                vid->loadMovie(attrs["movie"]);
+                vid->play();
+                vid->setLoopState(OF_LOOP_NORMAL);
+                /*
                 if(haveArabic){
                     vidArabic.play();
                 }
+                */
             }
         } else {
-            if(vid.isPlaying()){
+            if(vid){
                 cout << "video stopping." << endl;
-                vid.stop();
+                vid->stop();
+                vid->closeMovie();
+                delete vid;
+                vid = NULL;
+                /*
                 if(haveArabic){
                     vidArabic.stop();
                 }
+                */
             }
         }
     }
@@ -59,9 +88,14 @@ void GuiVideo::update(string _subName, Subject* _sub){
 }
 
 void GuiVideo::draw(){
+    /*
     if(!displayArabic){
-        vid.draw(pos.x,pos.y,1680,1050);
+        vid.draw(pos.x,pos.y);
     } else {
-        vidArabic.draw(pos.x,pos.y,1680,1050);
+        vidArabic.draw(pos.x,pos.y);
+    }
+    */
+    if(vid){
+        vid->draw(pos.x,pos.y);
     }
 }

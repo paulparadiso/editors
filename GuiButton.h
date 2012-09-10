@@ -17,7 +17,9 @@ class GuiButton : public GuiNode, public Subject, public Observer
         GuiButton(){}
         virtual ~GuiButton(){}
         bool processMouse(int _x, int _y, int _state);
-        void execute();
+        virtual void execute();
+        virtual void activate();
+        virtual void update();
         virtual void update(string _subName, Subject* _sub);
         void setMessage(map<string,string> _msg){}
         void draw();
@@ -33,7 +35,6 @@ class GuiButton : public GuiNode, public Subject, public Observer
 		bool drawActive;
         bool haveActive;
         bool haveImage;
-        bool displayArabic;
         bool haveArabic;
 };
 

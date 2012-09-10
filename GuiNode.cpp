@@ -1,4 +1,5 @@
 #include "GuiNode.h"
+#include "Utils.h"
 
 bool GuiNode::isInside(int _x, int _y){
     //cout << name << " checking insides." << pos.x << ", " << size.x << endl;
@@ -17,16 +18,16 @@ void GuiNode::initialize(){
     type = attrs["type"];
     name = attrs["name"];
     pos = stringToVec2f(attrs["pos"]);
+    haveDelay = false;
+    checkDelay = false;
+    map<string,string>::iterator mIter;
+    mIter = attrs.find("delay");
+    if(mIter != attrs.end()){
+        haveDelay = true;
+        checkDelay = false;
+        delayTime = ofToInt(attrs["delay"]);
+        cout << "Setting Timer to " << delayTime << endl;
+    }
     //size = stringToVec2f(attrs["size"]);
 }
 
-ofVec2f stringToVec2f(string _in){
-    //cout << "stringToVec2f - " << _in << endl;
-    vector<string> res = ofSplitString(_in, ",");
-    return ofVec2f(ofToFloat(res[0]),ofToFloat(res[1]));
-}
-
-ofVec3f stringToVec3f(string _in){
-    vector<string> res = ofSplitString(_in, ",");
-    return ofVec3f(ofToFloat(res[0]), ofToFloat(res[1]), ofToFloat(res[2]));
-}

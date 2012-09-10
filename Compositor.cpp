@@ -1,25 +1,12 @@
 #include "Compositor.h"
 #include "GuiConfigurator.h"
 
-Compositor* Compositor::mInstance = NULL;
-
-Compositor* Compositor::Instance(){
-    if(!mInstance){
-        mInstance = new Compositor();
-    }
-    return mInstance;
-}
-
 Compositor::Compositor(){
-    playState = PLAY_STATE_STOPPED;
     masterTex = new ofTexture;
     masterTex->allocate(854,480,GL_RGB);
     black = new unsigned char[854 * 480 * 3];
-    masterBuffer = new unsigned char[854 * 480 * 3];
     memset(black,0,854 * 480 * 3);
     blackOut();
-    isRecording = false;
-    saver.listCodecs();
     scrubberPosition = 0.0;
     maxRecordBuffer = 44100 * 30;
     playPosition = 0;
@@ -28,10 +15,8 @@ Compositor::Compositor(){
     recordBuffer = new float[maxRecordBuffer];
     stream.setup(this,1,1,44100,256,4);
     stream.stop();
-    bRunningTimeline = false;
-    clipCounter = 0;
     framerate = 24;
-    maxNumFrames = 24 * 60;
+    maxNumFrames = 24 * 59;
     numFrames = 0;
     currentFrame = 0;
     timer = new Timer(framerate);
@@ -45,36 +30,40 @@ Compositor::Compositor(){
     videoTimeline = NULL;
     bSetPause = false;
     bHaveVideoTimeline = false;
+    bDoRender = false;
+    isPlaying = false;
+}
+
+bool Compositor::haveVideoClips(){
+    if(bHaveVideoTimeline){
+        if(videoTimeline->haveClips()){
+            return true;
+        } else {
+            return false;
+        }
+    }
+    return false;
 }
 
 Compositor::~Compositor(){
 }
 
-void Compositor::vRender(){
-    pause();
-    //GuiConfigurator::Instance()->openSheet("info");
-    for(int i = 0; i < numFrames; i++){
-        ofSleepMillis(10);
+void Compositor::addTimeline(string _name, string _mode, string _pos){
+    if(_mode == "video"){
+        videoTimeline = new Timeline(60.0,_name,_mode,_pos);
+        videoTimelineName = _name;
+        bHaveVideoTimeline = true;
+    } else if (_mode == "audio"){
+        map<string, Timeline*>::iterator tIter;
+        tIter = audioTimelines.find(_name);
+        if(tIter != audioTimelines.end()){
+            audioTimelines.erase(_name);
+        }
+        audioTimelines[_name] = new Timeline(60.0, _name,_mode,_pos);
     }
-    GuiConfigurator::Instance()->closeSheet("info");
-    if(bHaveVideoTimeline){
-        videoTimeline->reset();
-    }
-    map<string,Timeline*>::iterator tIter;
-    for(tIter = audioTimelines.begin(); tIter != audioTimelines.end(); ++tIter){
-        tIter->second->reset();
-    }
-    SubObMediator::Instance()->update("reset",this);
-    SceneManager::Instance()->reset();
-    currentFrame = 0;
 }
 
 void Compositor::update(string _subName, Subject* _sub){
-    if(_subName == "clip-selected"){
-        string clipName = _sub->getAttr("path");
-        cout << "Compositor asked to add " << clipName << " to " << activeTimeline << endl;
-        addClipToTimeline(activeTimeline, MediaCabinet::Instance()->getClip(clipName));
-    }
     if(_subName == "reset"){
         if(bHaveVideoTimeline){
         videoTimeline->reset();
@@ -88,10 +77,6 @@ void Compositor::update(string _subName, Subject* _sub){
         blackOut();
     }
     if(_subName == "button"){
-        cout << "compositor got an action of " << _sub->getAttr("action") << endl;
-        if(_sub->getAttr("target-type") == "timeline"){
-            activeTimeline = _sub->getAttr("name");
-        }
         if(_sub->getAttr("action") == "control"){
             string cmd = _sub->getAttr("name");
             if(cmd == "rewind"){
@@ -123,15 +108,21 @@ void Compositor::update(string _subName, Subject* _sub){
                 saveRecording();
             }
         }
+        /*
         if(_sub->getAttr("name") == "render-button"){
-                cout << "rendering" << endl;
-                vRender();
-            }
+            cout << "rendering" << endl;
+            render();
+        }
+        */
+        if(_sub->getAttr("name") == "trash"){
+            blackOut();
+            rewind();
+        }
     }
     if(_subName == "timer-tick"){
         //cout << "Timer Tick" << endl;
         if(numFrames > 0){
-            currentFrame = (currentFrame + 1) % numFrames;
+            //currentFrame = (currentFrame + 1) % numFrames;
             if(bHaveVideoTimeline){
                 if(!videoTimeline->isCompositing()){
                     videoTimeline->setFrame(currentFrame);
@@ -141,30 +132,46 @@ void Compositor::update(string _subName, Subject* _sub){
             for(tIter = audioTimelines.begin(); tIter != audioTimelines.end(); ++tIter){
                 tIter->second->setFrame(currentFrame);
             }
+            currentFrame++;
+            if(currentFrame > numFrames){
+                currentFrame = numFrames;
+                //currentFrame = 0;
+                stop();
+            }
         }
         float timePos = (float)currentFrame / (float)maxNumFrames;
         setAttr("time-pos",ofToString(timePos));
         SubObMediator::Instance()->update("timeline-position-changed",this);
     }
-    if(_subName == "update-timeline-framecount"){
-        /*
-        numFrames = videoTimeline->getNumFrames();
-        cout << "updated numFrames to " << numFrames << endl;
-        */
-        updateFrameCount();
-    }
     if(_subName == "sheet-changed"){
-        pause();
+        stop();
     }
     if(_subName == "scrubber-position-changed"){
         float inPct = ofToFloat(_sub->getAttr("time-pos"));
-        currentFrame = maxNumFrames * inPct;
-        if(bHaveVideoTimeline){
-            if(currentFrame < numFrames && numFrames > 0){
+        //currentFrame = numFrames * inPct;
+        int jumpFrame = maxNumFrames * inPct;
+        if(jumpFrame < numFrames){
+            currentFrame = jumpFrame;
+        }
+        if((jumpFrame < numFrames) && bHaveVideoTimeline){
+            currentFrame = jumpFrame;
+            //if(currentFrame < numFrames && numFrames > 0){
                 videoTimeline->setFrame(currentFrame);
-            } else {
-                blackOut();
-            }
+                float timePos = (float)currentFrame / (float)maxNumFrames;
+                setAttr("time-pos",ofToString(timePos));
+                SubObMediator::Instance()->update("timeline-position-changed",this);
+            //} else {
+                /*
+                //blackOut();
+                float timePos = (float)currentFrame / (float)maxNumFrames;
+                setAttr("time-pos",ofToString(timePos));
+                SubObMediator::Instance()->update("timeline-position-changed",this);
+                */
+            //}
+        } else {
+            float timePos = (float)currentFrame / (float)maxNumFrames;
+            setAttr("time-pos",ofToString(timePos));
+            SubObMediator::Instance()->update("timeline-position-changed",this);
         }
         map<string,Timeline*>::iterator tIter;
         for(tIter = audioTimelines.begin(); tIter != audioTimelines.end(); ++tIter){
@@ -187,18 +194,6 @@ void Compositor::updateFrameCount(){
             numFrames = aNumFrames;
         }
     }
-    //cout << "updated num frames to " << numFrames << endl;
-}
-
-void Compositor::runTimeline(string _movFile){
-    rewind();
-    //numFrames = timelines["video-timeline"]->getTotalLength();
-    frameCounter = 0;
-    //timelines["video-timeline"]->setupRun();
-    bRunningTimeline = true;
-    saveVideo(_movFile);
-    //blackOut();
-
 }
 
 void Compositor::audioReceived(float* input, int bufferSize, int nChannels){
@@ -241,81 +236,42 @@ float Compositor::getRecordingPosition(){
     }
 }
 
-void Compositor::addTimeline(string _name, string _mode){
-    if(_mode == "video"){
-        bHaveVideoTimeline = true;
-        videoTimeline = new Timeline(60.0, _name, _mode);
-        videoTimelineName = _name;
-    }
-    if(_mode == "audio"){
-        audioTimelines[_name] = new Timeline(60.0, _name, _mode);
-    }
-}
-
 void Compositor::blackOut(){
     masterTex->loadData(black, 854, 480, GL_RGB);
     //memset(masterBuffer,0,854 * 480 * 3);
 }
 
 void Compositor::addClipToTimeline(string _timeline, Clip* _clip){
-    string clipID = _clip->getName() + ofToString(clipCounter++);
+    cout << "Compositor adding clip " << _clip->getName() << " to timeline " << _timeline << endl;
     if(bHaveVideoTimeline){
         if(_timeline == videoTimelineName){
-            videoTimeline->addClip(_clip, clipID);
-        //numFrames = videoTimeline->getNumFrames();
-            cout << "numFrames = " << numFrames << endl;
+            videoTimeline->addClip(_clip);
         } else {
-        audioTimelines[_timeline]->addClip(_clip, clipID);
+            audioTimelines[_timeline]->addClip(_clip);
         }
     } else {
-        audioTimelines[_timeline]->addClip(_clip, clipID);
-    }
-    setAttr("new-clip-id", clipID);
-    setAttr("new-clip-length", ofToString(_clip->getDuration()));
-    setAttr("active-timeline", activeTimeline);
-    setAttr("new-clip-mode", _clip->getType());
-    SubObMediator::Instance()->update("new-timeline-clip", this);
-    //timelines[_timeline]->start();
-    //updateFrameCount();
-}
-
-void Compositor::addClipToTimeline(string _timeline, Clip* _clip, string _id){
-    cout << "adding clip " << _id << " to timeline " << _timeline << endl;
-    //timelines[_timeline]->addClip(_clip, _id);
-    //timelines[_timeline]->start();
-    if(bHaveVideoTimeline){
-        if(_timeline == videoTimelineName){
-            videoTimeline->addClip(_clip, _id);
-        //numFrames = videoTimeline->getNumFrames();
-        } else {
-            audioTimelines[_timeline]->addClip(_clip, _id);
+        map<string,Timeline*>::iterator mIter;
+        mIter = audioTimelines.find(_timeline);
+        if(mIter != audioTimelines.end()){
+            audioTimelines[_timeline]->addClip(_clip);
         }
-    } else {
-        audioTimelines[_timeline]->addClip(_clip, _id);
     }
-    //updateFrameCount();
+    cout << "Compositor added clip to timeline." << endl;
+    updateFrameCount();
+    cout << "Compositor updatedFrameCount." << endl;
 }
 
 void Compositor::removeClipFromTimeline(string _timeline, Clip* _clip){
 }
 
-void Compositor::removeClipFromTimeline(string _timeline, string _id){
-}
-
 void Compositor::setScrubberPosition(float _pct){
-}
-
-int Compositor::getEffectStatus(string _name){
-}
-
-void Compositor::setEffectStatus(string _name, int _effectStatus){
 }
 
 void Compositor::update(){
     //numFrames = videoTimeline->getNumFrames();
-    //updateFrameCount();
+    updateFrameCount();
     if(bHaveVideoTimeline){
-        if(videoTimeline->hasNewFrame()){
+        if(videoTimeline->hasNewFrame() && !bSetPause){
             if(!videoTimeline->isCompositing()){
                 masterTex->loadData(videoTimeline->getPixels(), 854, 480, GL_RGB);
             }
@@ -333,11 +289,30 @@ void Compositor::update(){
         pause();
         bSetPause = false;
     }
-    updateFrameCount();
+    if(bDoRender){
+        pause();
+        render();
+    }
+}
+
+void Compositor::reset(){
+    if(bHaveVideoTimeline){
+        videoTimeline->reset();
+    }
+    map<string,Timeline*>::iterator tIter;
+    for(tIter = audioTimelines.begin(); tIter != audioTimelines.end(); ++tIter){
+        tIter->second->reset();
+    }
+    rewind();
+    blackOut();
 }
 
 void Compositor::start(){
+    if(currentFrame >= numFrames){
+        currentFrame = 0;
+    }
     timer->start();
+    isPlaying = true;
     map<string,Timeline*>::iterator tIter;
     for(tIter = audioTimelines.begin(); tIter != audioTimelines.end(); ++tIter){
         tIter->second->start();
@@ -346,6 +321,7 @@ void Compositor::start(){
 
 void Compositor::pause(){
     timer->stop();
+    isPlaying = false;
     map<string,Timeline*>::iterator tIter;
     for(tIter = audioTimelines.begin(); tIter != audioTimelines.end(); ++tIter){
         tIter->second->pause();
@@ -354,6 +330,7 @@ void Compositor::pause(){
 
 void Compositor::stop(){
     timer->stop();
+    isPlaying = false;
     map<string,Timeline*>::iterator tIter;
     for(tIter = audioTimelines.begin(); tIter != audioTimelines.end(); ++tIter){
         tIter->second->pause();
@@ -372,6 +349,7 @@ void Compositor::rewind(){
         tIter->second->rewind();
     }
     bSetPause = true;
+    //blackOut();
 }
 
 void Compositor::startRecording(){
@@ -422,16 +400,51 @@ void Compositor::draw(int _x, int _y, int _sx, int _sy){
     if(bHaveVideoTimeline){
         masterTex->draw(_x, _y, _sx, _sy);
     }
+    if(bHaveVideoTimeline){
+        videoTimeline->draw();
+    }
+    map<string, Timeline*>::iterator tIter;
+    for(tIter = audioTimelines.begin(); tIter != audioTimelines.end(); ++tIter){
+        tIter->second->draw();
+    }
+}
+
+void Compositor::draw(){
+}
+
+void Compositor::setRender(){
+    bDoRender = true;
+    renderFrames = 200;
 }
 
 void Compositor::render(){
+    /*
     GuiConfigurator::Instance()->openSheet("render");
     string timeBase = ofGetTimestampString();
     string wavFile = "render/audio/" + timeBase + ".wav";
     string movFile = "render/video/" + timeBase + ".mov";
     saveAudio(wavFile);
     runTimeline(movFile);
+    */
+    //cout << "compositor starting rendering" << endl;
 
+    if(renderFrames > 0){
+        //ofSleepMillis(2);
+        renderFrames--;
+        return;
+    }
+    GuiConfigurator::Instance()->replaceSheet("save-complete");
+    if(bHaveVideoTimeline){
+        videoTimeline->reset();
+    }
+    map<string,Timeline*>::iterator tIter;
+    for(tIter = audioTimelines.begin(); tIter != audioTimelines.end(); ++tIter){
+        tIter->second->reset();
+    }
+    //SubObMediator::Instance()->update("reset",this);
+    //SceneManager::Instance()->reset();
+    currentFrame = 0;
+    bDoRender = false;
 }
 
 void Compositor::saveAudio(string _fileName){

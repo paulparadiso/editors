@@ -29,6 +29,7 @@ void GuiConfigurator::update(string _subName, Subject* _sub){
             openSheet(target);
         }
         if(action == "close"){
+            cout << "closing sheet" << endl;
             closeSheet(target);
         }
         if(action == "replace"){
@@ -38,8 +39,16 @@ void GuiConfigurator::update(string _subName, Subject* _sub){
             closeSheet(target);
         }
         if(action == "reset"){
-            SubObMediator::Instance()->update("reset", this);
-            bFirstStart = true;
+            //SubObMediator::Instance()->update("reset", this);
+            SceneManager::Instance()->setReset();
+            MediaCabinet::Instance()->reset();
+            reset();
+        }
+        if(name == "render-button"){
+            SceneManager::Instance()->render();
+        }
+        if(name == "language"){
+            openSheet("start");
         }
     }
     if(_subName == "clip-selected"){
@@ -76,6 +85,21 @@ void GuiConfigurator::getTags(){
             mXML.popTag();
             addAttributeMap(sheetName, attrs, vals);
         }
+        mXML.popTag();
+    }
+    mXML.popTag();
+}
+
+void GuiConfigurator::getTimelines(){
+    mXML.pushTag("timelines");
+    int numTags = mXML.getNumTags("timeline");
+    for(int i = 0; i < numTags; i++){
+        mXML.pushTag("timeline",i);
+        string timelineName = mXML.getValue("name","none");
+        string timelineMode = mXML.getValue("mode","none");
+        string timelinePos = mXML.getValue("pos","none");
+        SceneManager::Instance()->addTimeline(timelineName, timelineMode, timelinePos);
+        cout << "adding timeline " << timelineName << ", of type " << timelineMode << ", at position " << timelinePos << endl;
         mXML.popTag();
     }
     mXML.popTag();
@@ -125,14 +149,18 @@ void GuiConfigurator::makeNode(string _handle, map<string,string> &_attrs){
         sheets[_handle]->addNode(new GuiButton(_attrs));
     } else if(type == "media-preview"){
         sheets[_handle]->addNode(new GuiMediaPreview(_attrs));
+    /*
     } else if(type == "timeline"){
         sheets[_handle]->addNode(new GuiTimeline(_attrs));
+    */
     } else if(type == "viewport"){
         sheets[_handle]->addNode(new GuiViewport(_attrs));
     } else if(type == "video-pager"){
-        sheets[_handle]->addNode(new VideoPager(_attrs));
+        sheets[_handle]->addNode(new Pager(_attrs));
     } else if(type == "loosie") {
         sheets[_handle]->setLoosie();
+    } else if(type == "animation"){
+        sheets[_handle]->addNode(new GuiAnimPNG(_attrs));
     }
 }
 
@@ -199,6 +227,10 @@ void GuiConfigurator::closeSheet(string _name){
 void GuiConfigurator::replaceSheet(string _name){
     SceneManager::Instance()->popSheet();
     SceneManager::Instance()->pushSheet(sheets[_name]);
+    if(bFirstStart && _name == "main"){
+        SceneManager::Instance()->pushSheet(sheets["start-overlay"]);
+        bFirstStart = false;
+    }
 }
 
 void GuiConfigurator::draw(){
@@ -209,5 +241,5 @@ void GuiConfigurator::click(int _x, int _y){
 
 void GuiConfigurator::reset(){
     bFirstStart = true;
-    SceneManager::Instance()->pushSheet(sheets["attract"]);
+    //SceneManager::Instance()->pushSheet(sheets["attract"]);
 }

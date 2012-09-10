@@ -10,10 +10,11 @@ class GuiVideo : public GuiButton {
         virtual ~GuiVideo(){}
         void draw();
         void update();
+        void activate();
         void update(string _subName, Subject* _sub);
     private:
-        ofVideoPlayer vid;
-        ofVideoPlayer vidArabic;
+        ofVideoPlayer *vid;
+        ofVideoPlayer *vidArabic;
         bool haveArabic;
         bool displayArabic;
 };

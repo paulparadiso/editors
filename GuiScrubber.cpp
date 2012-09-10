@@ -19,7 +19,7 @@ GuiScrubber::GuiScrubber(map<string,string> &_attrs){
 }
 
 void GuiScrubber::execute(){
-    Compositor::Instance()->pause();
+    //Compositor::Instance()->pause();
 }
 
 bool GuiScrubber::isDragging(int _x, int _y){
@@ -35,9 +35,9 @@ bool GuiScrubber::processMouse(int _x, int _y, int _state){
     if(bActivated && _state == MOUSE_STATE_UP){
         cout << "scrubber off" << endl;
         bActivated = false;
-        attrs.erase("name");
-        attrs["name"] = "play";
-        SubObMediator::Instance()->update("button", this);
+        //attrs.erase("name");
+        //attrs["name"] = "play";
+        //SubObMediator::Instance()->update("button", this);
         return true;
     }
     if(bActivated && _state == MOUSE_STATE_DRAG){

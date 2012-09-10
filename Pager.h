@@ -15,84 +15,57 @@ class PagerItem : public GuiNode, public Subject, public Observer{
 
 public:
     PagerItem() : GuiNode(){}
+    PagerItem(string _dir);
     void setPos(ofVec2f _pos){pos = _pos;}
     void setSize(ofVec2f _size){size = _size;}
-    virtual void draw(){}
-    virtual void drawFramed(){}
+    void makePreview();
+    void draw();
     bool processMouse(int _x, int _y, int _state);
-    virtual void execute(){}
+    void execute();
     void setPosition(int _x, int _y);
     void setDisplaySize(int _x, int _y);
     void setPagerPadding(int _x, int _y);
     void setItemPadding(int _x, int _y);
-    void update(string _subName, Subject *_sub);
     string getItemIndex(){return itemIndex;}
     string getItemType(){return itemType;}
+    void setReloader(){bReloader = true;}
+    string getAttr(const char* _key){string ret = _key; return attrs[ret];}
 
 protected:
     ofVec2f basePos;
     ofVec2f displaySize;
     ofVec2f itemPadding;
     ofVec2f pagerPadding;
-    int timeRemainingOnTrack;
     string itemType;
     string itemIndex;
-    bool haveArabic;
-    bool displayArabic;
-    //GuiNumberRenderer *numberRenderer;
-};
-
-class VideoItem : public PagerItem{
-
-public:
-    VideoItem(string _dir);
-    void setupVideo();
-    void setupImage();
-    void setupAudio();
-    void draw();
-    void drawFramed();
-    void drawVideo();
-    void drawImage();
-    void drawAudio();
-    void execute();
-    void executeVideo();
-    void executeImage();
-    void executeAudio();
-
-private:
     ofImage preview;
-    ofImage frame;
-    ofImage arabicFrame;
     string duration;
     string drawDuration;
     int durationInt;
-    //string path;
-    //string type;
-    //string target;
     GuiMediaPreview *mediaPreview;
     GuiSheet *previewSheet;
     ofTrueTypeFont texter;
-    map<string,string> msg;
-    GuiButton *button;
+    bool bReloader;
 };
 
-class Pager : public GuiNode {
+class Pager : public GuiNode, public Observer {
 
 public:
     Pager(map<string,string> &_attrs);
     //virtual ~Pager(){}
     bool processMouse(int _x, int _y, int _state);
-    virtual void execute(){}
-    virtual void reload(){}
+    void reload();
     void draw();
+    void execute(){}
     void nextPage();
     void previousPage();
     void setPositions();
     void setAllAttr(string _attr, string _val);
+    void update(string _subName, Subject *_sub);
 
 protected:
     map<int,PagerItem*>items;
-    void message(map<string,string> _msg);
+    void populate(string _dir);
     int currentPage;
     int numItemsPerPage;
     int firstItem;
@@ -107,14 +80,6 @@ protected:
     ofTrueTypeFont texter;
     string activeTimeline;
     bool bReloader;
-};
-
-class VideoPager : public Pager, public Observer {
-public:
-    VideoPager(map<string, string> & _attrs);
-    virtual void reload();
-    void update(string _subName, Subject *_sub);
-private:
     string dir;
     ofDirectory lister;
     ofxXmlSettings xml;

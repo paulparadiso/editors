@@ -1,6 +1,8 @@
 #include "GuiTimeline.h"
+#include "ClipContainer.h"
+#include "GuiConfigurator.h"
 
-GuiTimelineButton::GuiTimelineButton(float _length, string _type) : GuiButton(){
+GuiTimelineButton::GuiTimelineButton(float _length, string _type, ClipContainer *_partnerClip) : GuiButton(){
     totalWidth = 1400;
     colors["none"] = new ofColor(255,255,255);
     colors["effect_1"] = new ofColor(172, 10, 117);
@@ -8,6 +10,8 @@ GuiTimelineButton::GuiTimelineButton(float _length, string _type) : GuiButton(){
     colors["effect_3"] = new ofColor(28, 100, 10);
     colors["effect_4"] = new ofColor(141, 198, 63);
     colors["effect_5"] = new ofColor(141, 198, 63);
+    colors["effect_6"] = new ofColor(172, 10, 117);
+    colors["effect_7"] = new ofColor(244, 115, 33);
     activeEffect = "none";
     curveRadius = 14;
     type = _type;
@@ -15,8 +19,8 @@ GuiTimelineButton::GuiTimelineButton(float _length, string _type) : GuiButton(){
     if(length < 1.0){
         length = 1.0;
     }
-    makeDropShadow();
     makeButton();
+    makeDropShadow();
     makeInnerCurve();
     makeOuterCurve();
     if(_length > 2.0){
@@ -31,6 +35,17 @@ GuiTimelineButton::GuiTimelineButton(float _length, string _type) : GuiButton(){
     bLoosie = false;
     SubObMediator::Instance()->addObserver("button", this);
     bAwaitingResponse = false;
+    partnerClip = _partnerClip;
+    setChannel("button");
+    setAttr("action","open");
+    if(type == "video"){
+        setAttr("target","video-effects");
+    }
+    if(type == "audio"){
+        setAttr("target","audio-effects");
+    }
+    setAttr("sfx","button11");
+    SubObMediator::Instance()->addObserver("button",this);
 }
 
 void GuiTimelineButton::update(string _subName, Subject* _sub){
@@ -50,17 +65,47 @@ void GuiTimelineButton::update(string _subName, Subject* _sub){
             } else {
                 attrs["effect"] = ofSplitString(activeEffect, "_")[1];
             }
-            SubObMediator::Instance()->update("new-effect", this);
+            //SubObMediator::Instance()->update("new-effect", this);
+            partnerClip->setEffectStatus(ofToInt(attrs["effect"]));
             bAwaitingResponse = false;
         }
     }
+    if(_subName == "button"){
+        if(bAwaitingResponse){
+            if(_sub->getAttr("name") == "trash"){
+                cout << "killing partner." << endl;
+                partnerClip->kill();
+                bAwaitingResponse = false;
+            }
+        }
+    }
+}
+
+void GuiTimelineButton::execute(){
+    bAwaitingResponse = true;
+    GuiConfigurator::Instance()->addLoosie(this);
+    GuiButton::execute();
 }
 
 void GuiTimelineButton::setTotalLength(float _length){
     length = _length;
 }
 
+void GuiTimelineButton::setLength(float _length){
+    if(length != _length){
+        length = _length;
+        if(length < 1.0){
+            length = 1.0;
+        }
+        makeButton();
+        makeDropShadow();
+        makeInnerCurve();
+        makeOuterCurve();
+    }
+}
+
 void GuiTimelineButton::makeDropShadow(){
+    dropShadow.clear();
     dropShadow.setFillColor(ofColor(120,120,120,127));
     dropShadow.setFilled(true);
     dropShadow.moveTo(curveRadius, 0);
@@ -82,6 +127,7 @@ void GuiTimelineButton::makeButton(){
     curveBuffer = curveRadius * 2;
     widthSegment = width - curveBuffer;
     heightSegment = height - curveBuffer;
+    buttonPath.clear();
     buttonPath.setFillColor(ofColor(43,172,226));
     buttonPath.setFilled(true);
     buttonPath.moveTo(curveRadius, 0);
@@ -97,6 +143,7 @@ void GuiTimelineButton::makeButton(){
 }
 
 void GuiTimelineButton::makeInnerCurve(){
+    innerCurve.clear();
     innerCurve.setCurveResolution(20);
     innerCurve.setFillColor(ofColor(128,215,247));
     innerCurve.moveTo(curveRadius, 0);
@@ -111,6 +158,7 @@ void GuiTimelineButton::makeInnerCurve(){
 }
 
 void GuiTimelineButton::makeOuterCurve(){
+    outerCurve.clear();
     outerCurve.setStrokeWidth(5);
     //outerCurve.setFillColor(ofColor(0,0,0));
     //outerCurve.setUseShapeColor(true);
@@ -156,6 +204,7 @@ void GuiTimelineButton::drawLoosie(){
     bLoosie = false;
 }
 
+/*
 GuiTimeline::GuiTimeline(map<string,string> &_attrs): GuiNode(){
     attrs = _attrs;
     mode = attrs["mode"];
@@ -163,7 +212,7 @@ GuiTimeline::GuiTimeline(map<string,string> &_attrs): GuiNode(){
     clipCounter = 0;
     currentTime = 0;
     maxTime = 60;
-    Compositor::Instance()->addTimeline(attrs["name"], attrs["mode"]);
+
     //timeline = Compositor::Instance()->getTimeline(attrs["name"]);
     SubObMediator::Instance()->addObserver("new-timeline-clip", this);
     SubObMediator::Instance()->addObserver("button", this);
@@ -261,26 +310,10 @@ void GuiTimeline::deleteItem(map<string,string> _msg){
         }
     }
     //Clip *clip = MediaCabinet::Instance()->getClip(clipToDelete);
-    Compositor::Instance()->removeClipFromTimeline(name, _msg["clip"]);
 }
 
 void GuiTimeline::addVideo(float _length, string _path){
     cout << "timeline adding video - " << _path << " length = " << _length << endl;
-    /*
-    if(_length == 5){
-        images.push_back(new GuiButton("cuts/timeline_icon_5.png"));
-    }
-    if(_length == 10){
-        images.push_back(new GuiButton("cuts/timeline_icon_10.png"));
-    }
-    if(_length == 15){
-        images.push_back(new GuiButton("cuts/timeline_icon_15.png"));
-    }
-    if(_length == 30){
-        images.push_back(new GuiButton("cuts/timeline_icon_30.png"));
-    }
-    //cout << "images size = " << images.size() << endl;
-    */
     images.push_back(new GuiTimelineButton(_length, "video"));
     cout << "now have " << images.size() << " button(s) on timeline." << endl;
     //string tmpName = _path + ofToString(clipCounter++);
@@ -297,20 +330,6 @@ void GuiTimeline::addVideo(float _length, string _path){
 }
 
 void GuiTimeline::addAudio(float _length, string _path){
-    /*
-    if(_length == 1){
-        images.push_back(new GuiButton("cuts/timeline_audio_icon_1.png"));
-    }
-    if(_length == 5){
-        images.push_back(new GuiButton("cuts/timeline_audio_icon_5.png"));
-    }
-    if(_length == 15){
-        images.push_back(new GuiButton("cuts/timeline_audio_icon_15.png"));
-    }
-    if(_length == 30){
-        images.push_back(new GuiButton("cuts/timeline_audio_icon_30.png"));
-    }
-    */
     images.push_back(new GuiTimelineButton(_length, "audio"));
     //images.back()->setName(name + ofToString(clipCounter++));
     //string tmpName = _path + ofToString(clipCounter++);
@@ -372,3 +391,4 @@ void GuiTimeline:: draw(){
         (*iIter)->draw();
     }
 }
+*/

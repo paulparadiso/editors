@@ -1,4 +1,6 @@
 #include "GuiButton.h"
+#include "Utils.h"
+#include "SceneManager.h"
 
 GuiButton::GuiButton(map<string, string> &_attrs) : GuiNode(){
     attrs = _attrs;
@@ -21,25 +23,30 @@ GuiButton::GuiButton(map<string, string> &_attrs) : GuiNode(){
     setName("button");
 	setChannel("button");
 	haveArabic = false;
-    displayArabic = false;
     map<string,string>::iterator mIter;
     mIter = attrs.find("arabic");
     if(mIter != attrs.end()){
         haveArabic = true;
-        displayArabic = true;
         arabic.loadImage(attrs["arabic"]);
-        SubObMediator::Instance()->addObserver("button", this);
     }
 }
 
 GuiButton::GuiButton(string _img) : GuiNode(){
     inactive.loadImage(_img);
     haveArabic = false;
-    displayArabic = false;
     size.x = inactive.getWidth();
     size.y = inactive.getHeight();
     haveImage = true;
     drawActive = false;
+    setName("button");
+	setChannel("button");
+}
+
+void GuiButton::activate(){
+    if(haveDelay){
+        startTime = ofGetElapsedTimef();
+        checkDelay = true;
+    }
 }
 
 bool GuiButton::processMouse(int _x, int _y, int _state){
@@ -56,26 +63,26 @@ bool GuiButton::processMouse(int _x, int _y, int _state){
 }
 
 void GuiButton::execute(){
-    //cout << name << " is executing" << endl;
+    cout << name << " is executing" << endl;
     SubObMediator::Instance()->update(channel, this);
 }
 
-void GuiButton::update(string _subName, Subject* _sub){
-    if(_subName == "button"){
-        string target = _sub->getAttr("target");
-        string action = _sub->getAttr("action");
-        if(target == "language" && action == "switch"){
-            if(haveArabic){
-                displayArabic = !displayArabic;
-            }
+void GuiButton::update(){
+    if(haveDelay && checkDelay){
+        if(ofGetElapsedTimef() > startTime + delayTime){
+            execute();
+            checkDelay = false;
         }
     }
+}
+
+void GuiButton::update(string _subName, Subject* _sub){
 }
 
 void GuiButton::draw(){
     if(haveImage){
         if(!drawActive){
-            if(displayArabic){
+            if(haveArabic && SceneManager::Instance()->getDisplayArabic()){
                 arabic.draw(pos.x,pos.y);
             } else {
                 inactive.draw(pos.x,pos.y);

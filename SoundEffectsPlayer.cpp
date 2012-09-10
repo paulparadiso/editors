@@ -13,6 +13,7 @@ SoundEffectsPlayer::SoundEffectsPlayer()
 
 void SoundEffectsPlayer::update(string _subName, Subject* _sub){
     string sfx = _sub->getAttr("sfx");
+    //cout << "SFX triggered. with " << "sfx" << endl;
     map<string,ofSoundPlayer>::iterator mIter;
     mIter = players.find(sfx);
     if(mIter != players.end()){

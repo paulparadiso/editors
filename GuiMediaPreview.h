@@ -17,6 +17,7 @@ public:
     bool processMouse(int _x, int _y, int _state);
     void execute();
     void update();
+    void activate();
     void draw();
     void message(map<string,string> _msg);
     bool isInside(int _x, int _y);
@@ -35,6 +36,7 @@ private:
     GuiButton *exit;
     GuiButton *select;
     GuiButton *play;
+    bool havePreview;
 };
 
 #endif

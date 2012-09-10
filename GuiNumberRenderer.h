@@ -20,7 +20,6 @@ class GuiNumberRenderer : public Observer
         map<int,ofImage> timeRemainingArabic;
         map<int,ofImage> clipTimeArabic;
         ofDirectory lister;
-        bool displayArabic;
 };
 
 #endif // GUINUMBERRENDERER_H

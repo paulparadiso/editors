@@ -1,5 +1,5 @@
 #include "MediaCabinet.h"
-#include "XMLLoader.h"
+#include "SceneManager.h"
 
 MediaCabinet* MediaCabinet::mInstance = NULL;
 
@@ -24,6 +24,8 @@ void MediaCabinet::addClip(string _name, string _path){
     mIter = cabinet.find(path);
     if(mIter != cabinet.end()){
         cout << path << " already in cabinet." << endl;
+        cabinet[path]->startPreview();
+        lastItem = path;
         return;
     }
     if(type == "video" || type == "image"){
@@ -37,6 +39,7 @@ void MediaCabinet::addClip(string _name, string _path){
     }
     clipHolds[path] = 0;
     cout << "MediaCabinet size = " << cabinet.size() << endl;
+    cabinet[path]->startPreview();
     lastItem = path;
 }
 
@@ -48,6 +51,8 @@ Clip* MediaCabinet::getClip(string _name){
 }
 
 Clip* MediaCabinet::getLastClip(){
+    Clip* clip = cabinet[lastItem];
+    cout << "returning a clip named - " << clip->getName() << endl;
     return cabinet[lastItem];
 }
 
@@ -59,20 +64,37 @@ void MediaCabinet::increaseClipHold(Clip* _clip){
 void MediaCabinet::decreaseClipHold(Clip* _clip){
     clipHolds[_clip->getName()] -= 1;
     cout << "MediaCabinet decreasing hold on " << _clip->getName() << " to " << clipHolds[_clip->getName()] << endl;
+    //if(!SceneManager::Instance()->haveActiveVideos()){
     if(clipHolds[_clip->getName()] < 1){
-        //removeClip(_clip);
+        removeClip(_clip);
     }
+    /*
+    } else if(cabinet.size() > 30){
+        if(clipHolds[_clip->getName()] < 1){
+            removeClip(_clip);
+        }
+    }
+    */
 }
 
 void MediaCabinet::removeClip(Clip* _clip){
     map<string,Clip*>::iterator mIter;
     for(mIter = cabinet.begin(); mIter != cabinet.end(); ++mIter){
         if(mIter->second == _clip){
-            //delete mIter->second;
+            delete mIter->second;
             cabinet.erase(mIter);
             cout << "removing clip" << endl;
+            break;
         }
     }
+    /*
+    for(mIter = cabinet.begin(); mIter != cabinet.end(); ++mIter){
+        if(mIter->second->getType() == "video"){
+            delete mIter->second;
+            mIter->second = new VideoClip(mIter->first);
+        }
+    }
+    */
     cout << "MediaCabinet size = " << cabinet.size() << endl;
 }
 

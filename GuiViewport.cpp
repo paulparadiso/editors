@@ -1,4 +1,5 @@
 #include "GuiViewport.h"
+#include "SceneManager.h"
 
 GuiViewport::GuiViewport(map<string,string> &_attrs) : GuiNode(){
     attrs = _attrs;
@@ -7,23 +8,22 @@ GuiViewport::GuiViewport(map<string,string> &_attrs) : GuiNode(){
 }
 
 void GuiViewport::update(){
-    Compositor::Instance()->update();
 }
 
 void GuiViewport::draw(){
-    Compositor::Instance()->draw(pos.x,pos.y,size.x,size.y);
+    SceneManager::Instance()->drawCompositor(pos.x,pos.y,size.x,size.y);
 }
 
 void GuiViewport::message(map<string,string> _msg){
     cout << name << " told to " << _msg["action"] << endl;
     string action = _msg["action"];
     if(action == "play"){
-        Compositor::Instance()->start();
+        //Compositor::Instance()->start();
     } else if(action == "pause"){
-        Compositor::Instance()->pause();
+        //Compositor::Instance()->pause();
     } else if(action == "rewind"){
-        Compositor::Instance()->rewind();
-        Compositor::Instance()->start();
+        //Compositor::Instance()->rewind();
+        //Compositor::Instance()->start();
     }
 
 }
